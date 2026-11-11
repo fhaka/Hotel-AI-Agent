@@ -1104,6 +1104,24 @@ export type Database = {
         };
         Returns: undefined;
       };
+      search_agent_knowledge: {
+        Args: {
+          p_business_id: string;
+          p_category?: Database["public"]["Enums"]["knowledge_category"];
+          p_limit?: number;
+          p_offset?: number;
+          p_query?: string;
+        };
+        Returns: {
+          category: Database["public"]["Enums"]["knowledge_category"];
+          content: string;
+          id: string;
+          source_type: string;
+          title: string;
+          total_count: number;
+          updated_at: string;
+        }[];
+      };
       update_member_role: {
         Args: {
           p_business_id: string;

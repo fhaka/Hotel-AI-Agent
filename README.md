@@ -4,7 +4,7 @@ Multi-tenant SaaS that gives hotels (and later other service businesses) AI rece
 reservation assistants, with self-service sign-up, private workspaces, a 7-day free trial and
 recurring subscriptions.
 
-> **Status:** Phases 1–3 complete (foundation, onboarding, SaaS dashboard & team). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
+> **Status:** Phases 1–4 complete (foundation, onboarding, SaaS dashboard & team, knowledge base). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 > for what exists, what does not yet, and the roadmap.
 
 ## Quick start
@@ -74,6 +74,16 @@ npm run dev                  # http://localhost:3000
    `set hotelai.allow_trial_edit = on; update subscriptions set trial_started_at = now() - interval '8 days', trial_ends_at = now() - interval '1 day' where business_id = '<id>';`
    → red banner, invitations blocked, data still visible.
 
+## How to verify Phase 4 manually
+
+1. `npx supabase db push` (new migration).
+2. **Knowledge base** → *Add entry* → FAQ "Do you have parking?" / "Yes, free, 20 spaces".
+   Entries from onboarding show a *From setup* badge.
+3. Search for `parking`, filter by category, edit and delete an entry (confirmation dialog).
+4. **Preview agent knowledge** shows the exact block your agents will receive (profile, hours,
+   policies, rooms, entries) and how much of the budget is used.
+5. Sign in as a *staff* member: the knowledge base is read-only.
+
 ## Project layout
 
 ```
@@ -91,6 +101,7 @@ src/
     entitlements/      entitlement snapshot, permissions, decisions, service
     team/, agents/     invitation/role and agent-config schemas
     email/             Resend sender and escaped templates
+    knowledge/         categories, schemas, tenant-scoped loader, agent context builder
     supabase/          browser / server / proxy / admin clients
     env.ts             public env validation; env.server.ts for secrets
   proxy.ts             session refresh + coarse route protection

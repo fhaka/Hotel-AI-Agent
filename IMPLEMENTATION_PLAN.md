@@ -1,6 +1,6 @@
 # HotelAI — Implementation Plan
 
-Living document. Updated at the end of every phase. Last update: **Phase 3 complete** (2026-11-13).
+Living document. Updated at the end of every phase. Last update: **Phase 4 complete** (2026-11-14).
 
 ## Repository status at start
 
@@ -33,6 +33,7 @@ Recorded in [`docs/architecture/`](docs/architecture):
 - [0003 — Trials, subscriptions and entitlements](docs/architecture/0003-trials-and-entitlements.md)
 - [0004 — Onboarding wizard and active workspace](docs/architecture/0004-onboarding-and-active-workspace.md)
 - [0005 — Entitlement service and team invitations](docs/architecture/0005-entitlements-and-team.md)
+- [0006 — Knowledge base and agent knowledge context](docs/architecture/0006-knowledge-base.md)
 
 ## Phases
 
@@ -109,14 +110,28 @@ clock and are covered by DB tests for every status (trial active/expired, active
 canceled before/after period end, incomplete). UI click-through against live Supabase still pending
 (see Known gaps).
 
-### Phase 4 — Knowledge base ⬜
+### Phase 4 — Knowledge base ✅
 
-- `/dashboard/knowledge` CRUD with categories (table + RLS already exist).
-- Private Supabase Storage bucket for documents (later in phase; type/size limits).
+| Item | Status |
+|---|---|
+| `/dashboard/knowledge`: list, category filters with counts, search, pagination, empty states | ✅ |
+| Create / edit / delete entries (FAQ, about, services, prices, policies, hours, hotel info, other) with category-specific labels and a confirmation on delete | ✅ |
+| Role rules: everyone reads; owner/admin/manager edit (UI + RLS) | ✅ |
+| Injection-safe search function (RLS applies, no filter syntax / wildcard interpretation) | ✅ |
+| Per-business entry and size limits; author/source can't be spoofed; audit (no content) | ✅ |
+| Safe knowledge retrieval for agents: tenant-scoped loader + delimited, budgeted, injection-resistant context builder | ✅ |
+| "What your agents know" preview page with budget usage and omission warning | ✅ |
+| Prices, policies, operating hours and hotel information | ✅ (structured ones via Business settings, the rest as entries) |
+| Document upload (private Storage) | ⏭ deferred: needs text extraction to be useful (see ADR 0006) |
+
+**Acceptance criteria — "a business can enter information and retrieve it only within its own
+workspace":** covered by DB tests (RLS on CRUD and search, cross-tenant search and context
+loading return nothing) and unit tests (context builder).
 
 ### Phase 5 — AI playground ⬜
 
 - Agent runtime must call `checkAgentExecution()` (already implemented) before every model call.
+- Use `loadKnowledgeSources()` + `formatKnowledgeContext()` (already implemented) for business knowledge; the system prompt must declare the `<business_knowledge>` block as data, not instructions.
 
 - OpenAI Responses API integration (model from `OPENAI_MODEL`; verify current docs first).
 - Shared agent runtime: entitlement check → load business config/knowledge → tool calling with Zod
