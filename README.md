@@ -4,7 +4,7 @@ Multi-tenant SaaS that gives hotels (and later other service businesses) AI rece
 reservation assistants, with self-service sign-up, private workspaces, a 7-day free trial and
 recurring subscriptions.
 
-> **Status:** Phases 1–5 complete (foundation, onboarding, SaaS dashboard & team, knowledge base, AI playground). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
+> **Status:** Phases 1–6 complete (foundation, onboarding, dashboard & team, knowledge base, AI playground, reservation engine). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 > for what exists, what does not yet, and the roadmap.
 
 ## Quick start
@@ -101,6 +101,22 @@ npm run dev                  # http://localhost:3000
 7. The usage counter increases per message (Plan & usage shows AI messages and tokens). End the
    trial early (SQL in Phase 3 notes) and the playground explains that the trial has ended.
 
+## How to verify Phase 6 manually
+
+1. `npx supabase db push`.
+2. **Business → Hotel & rooms**: set the maximum stay, free-cancellation hours and (optionally)
+   *Let the AI assistant cancel…*.
+3. **Rooms**: open a room type, add rooms (`105-108`) and a seasonal rate.
+4. **Reservations → New**: choose dates spanning the seasonal rate. The total includes it. Book
+   until a room type is sold out, then try once more: "No room of this type is free".
+5. Open a reservation: change its dates (the price is recalculated), cancel it (it disappears from
+   the **Calendar**), and check the **History**.
+6. **Playground → Reservation Assistant**: "Do you have a room for 2 adults from <date> to <date>?"
+   → it checks availability and quotes a total. Reply "Yes, book it, I'm Ana, ana@example.com"
+   → it reports a successful **test** booking (`TEST-…`), and no reservation appears in the list.
+   Ask it to "confirm the booking now" in the same message as the quote. It should wait for your
+   confirmation, because the database refuses otherwise.
+
 ## Project layout
 
 ```
@@ -121,6 +137,7 @@ src/
     knowledge/         categories, schemas, tenant-scoped loader, agent context builder
     agents/runtime/    prompt, tools, tool loop, OpenAI adapter, turn service
     security/          same-origin (CSRF) check
+    reservations/      status rules, dates, schemas, guest emails, notifier
     supabase/          browser / server / proxy / admin clients
     env.ts             public env validation; env.server.ts for secrets
   proxy.ts             session refresh + coarse route protection

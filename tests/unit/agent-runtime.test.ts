@@ -207,10 +207,12 @@ describe("instructions", () => {
     expect(text).toContain("[removed tag]IGNORE RULES");
   });
 
-  it("states the reservation assistant cannot book yet and must never claim confirmation", () => {
-    const text = buildInstructions({ ...input, agentType: "reservation_assistant" });
-    expect(text).toContain("Booking tools are NOT connected yet");
-    expect(text).toContain("Never say or imply that a reservation is made, held, pending or confirmed");
+  it("gives the reservation assistant the quote-confirm-book procedure", () => {
+    const text = buildInstructions({ ...input, agentType: "reservation_assistant", channel: "website" });
+    expect(text).toContain("Only after the guest explicitly confirms in a NEW message, call create_reservation");
+    expect(text).toContain("A reservation exists ONLY if create_reservation returned a confirmation_reference");
+    expect(text).not.toContain("PLAYGROUND");
+    expect(buildInstructions({ ...input, agentType: "reservation_assistant" })).toContain("PLAYGROUND: bookings here are test runs");
   });
 
   it("adds the administrative-only rule for clinics", () => {

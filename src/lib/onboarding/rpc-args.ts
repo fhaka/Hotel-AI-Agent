@@ -38,7 +38,14 @@ export function operationsArgs(businessId: string, o: OperationsInput): Fn["save
 export function hotelArgs(businessId: string, h: HotelInput): Fn["save_onboarding_hotel"]["Args"] {
   return {
     p_business_id: businessId,
-    p_booking_settings: { check_in_time: h.checkInTime, check_out_time: h.checkOutTime, currency: h.currency },
+    p_booking_settings: {
+      check_in_time: h.checkInTime,
+      check_out_time: h.checkOutTime,
+      currency: h.currency,
+      max_nights: h.maxNights,
+      free_cancellation_hours: h.freeCancellationHours,
+      ai_can_cancel: h.aiCanCancel,
+    },
     p_hotel_policies: h.policies,
     p_room_types: h.roomTypes.map((rt) => ({
       name: rt.name,

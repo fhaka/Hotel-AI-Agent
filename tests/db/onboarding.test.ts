@@ -225,22 +225,15 @@ describe("save_onboarding_hotel", () => {
     const user = await createUser();
     const b = await createWorkspace(user, "Busy Hotel");
     await saveHotel(user, b, roomTypes, { commit: true });
-    await asUser(
-      user,
-      async (db) => {
-        const room = await db.query("select id from public.rooms where business_id = $1 limit 1", [b]);
-        const guest = await db.query(
-          "insert into public.guests (business_id, full_name) values ($1, 'Guest') returning id",
-          [b],
-        );
-        await db.query(
-          `insert into public.reservations (business_id, room_id, guest_id, check_in, check_out, guests_count, total_price_cents, created_by)
-           values ($1, $2, $3, '2027-01-01', '2027-01-02', 1, 100, auth.uid())`,
-          [b, room.rows[0].id, guest.rows[0].id],
-        );
-      },
-      { commit: true },
-    );
+    await asService(async (db) => {
+      const room = await db.query("select id from public.rooms where business_id = $1 limit 1", [b]);
+      const guest = await db.query("insert into public.guests (business_id, full_name) values ($1, 'Guest') returning id", [b]);
+      await db.query(
+        `insert into public.reservations (business_id, room_id, guest_id, check_in, check_out, guests_count, total_price_cents)
+         values ($1, $2, $3, '2027-01-01', '2027-01-02', 1, 100)`,
+        [b, room.rows[0].id, guest.rows[0].id],
+      );
+    });
     await expect(saveHotel(user, b)).rejects.toMatchObject({ code: "55006" });
   });
 });

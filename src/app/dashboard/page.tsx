@@ -11,6 +11,8 @@ import { INDUSTRIES } from "@/lib/onboarding/reference-data";
 import { readCompletedSteps, resumeStep, stepPath } from "@/lib/onboarding/steps";
 import { getActiveWorkspace } from "@/lib/workspaces/active";
 import { getWorkspaceOverview } from "@/lib/workspaces/overview";
+import { todayInZone } from "@/lib/reservations/dates";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -52,7 +54,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     );
   }
 
-  const [overview, ent] = await Promise.all([getWorkspaceOverview(active), getBusinessEntitlements(active.businessId, user)]);
+  const ent = await getBusinessEntitlements(active.businessId, user);
+  const { data: tzRow } = await (await createClient()).from("businesses").select("timezone").eq("id", active.businessId).single();
+  const overview = await getWorkspaceOverview(active, todayInZone(tzRow?.timezone ?? "UTC", new Date(ent.snapshot.evaluated_at)));
   // Evaluated against the database clock, same as access decisions.
   const trial = summarizeTrial(overview.subscription, new Date(ent.snapshot.evaluated_at));
   const isAdmin = active.role === "owner" || active.role === "admin";
@@ -93,6 +97,24 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             </ButtonLink>
           ) : null}
         </Card>
+      ) : null}
+
+      {overview.hotel ? (
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          {[
+            ["Arrivals today", overview.hotel.arrivals],
+            ["Departures today", overview.hotel.departures],
+            ["In house", overview.hotel.inHouse],
+            ["Occupancy tonight", overview.hotel.occupancyPct === null ? "—" : `${overview.hotel.occupancyPct}%`],
+            ["Upcoming bookings", overview.hotel.upcoming],
+            ["AI bookings (30 days)", overview.hotel.aiBookings30d],
+          ].map(([label, value]) => (
+            <Card key={String(label)} className="p-4">
+              <p className="text-xs font-medium text-muted">{label}</p>
+              <p className="mt-1 text-2xl font-semibold">{value}</p>
+            </Card>
+          ))}
+        </div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3">

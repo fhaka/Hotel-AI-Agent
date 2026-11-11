@@ -1,6 +1,6 @@
 # HotelAI — Implementation Plan
 
-Living document. Updated at the end of every phase. Last update: **Phase 5 complete** (2026-11-15).
+Living document. Updated at the end of every phase. Last update: **Phase 6 complete** (2026-11-16).
 
 ## Repository status at start
 
@@ -35,6 +35,7 @@ Recorded in [`docs/architecture/`](docs/architecture):
 - [0005 — Entitlement service and team invitations](docs/architecture/0005-entitlements-and-team.md)
 - [0006 — Knowledge base and agent knowledge context](docs/architecture/0006-knowledge-base.md)
 - [0007 — AI agent runtime and playground](docs/architecture/0007-agent-runtime.md)
+- [0008 — Reservation engine and AI booking protocol](docs/architecture/0008-reservation-engine.md)
 
 ## Phases
 
@@ -152,12 +153,29 @@ hotel's saved information":** implemented end-to-end in code and covered piecewi
 **Not yet observed with a real model**: needs `OPENAI_API_KEY`, `OPENAI_MODEL` and
 `SUPABASE_SECRET_KEY` on a running deployment.
 
-### Phase 6 — Hotel reservation engine ⬜ (schema 🟡)
+### Phase 6 — Hotel reservation engine ✅
 
-- Rooms, room types, seasonal rates, guests, reservations UI.
-- Availability search and price calculation as SQL functions (single source of truth).
-- `create_reservation` tool: allocation inside a transaction relying on the exclusion constraint.
-- Reservation audit history, cancellation rules, confirmation emails, calendar.
+| Item | Status |
+|---|---|
+| Rooms: types, rooms, status, seasonal rates (non-overlapping) | ✅ |
+| Availability search and price calculation in SQL (seasonal rates, business time zone, max stay) | ✅ |
+| Staff reservations: create (3-step), view, edit dates/guests (re-pricing, re-allocation), status changes, cancel, search/filter, AI badge | ✅ |
+| Concurrency-safe allocation + exclusion constraint (no overbooking) | ✅ |
+| Guests: auto-matched by email, search, profile, booking history | ✅ |
+| Calendar (rooms × 14 nights) from PostgreSQL | ✅ |
+| Reservation history (events) + audit log | ✅ |
+| Confirmation/cancellation emails, sent only after commit, idempotent, logged | ✅ (live sending needs Resend keys) |
+| AI tools: `get_hotel_information`, `search_room_availability`, `get_room_details`, `calculate_booking_price`, `create_reservation`, `get_reservation`, `request_reservation_cancellation` | ✅ |
+| DB-enforced quote → explicit confirmation in a later message → booking; price re-check; idempotent | ✅ |
+| Reply guard against invented confirmation numbers | ✅ |
+| Playground bookings as rolled-back dry runs | ✅ |
+| Hotel cancellation rules (AI cancel switch, free-cancellation window) | ✅ |
+| Dashboard occupancy metrics | ✅ |
+
+**Acceptance criteria — "the AI can search real availability and safely create a reservation
+without double-booking":** proven at the database level (117 DB tests, including concurrency, the
+quote/confirmation protocol and dry runs) and at the tool/guard level (unit tests with a scripted
+model). The live conversation with a real model still requires your OpenAI configuration.
 
 ### Phase 7 — Billing ⬜ (schema 🟡)
 

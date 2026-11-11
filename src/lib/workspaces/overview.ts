@@ -7,7 +7,7 @@ import type { WorkspaceSummary } from "./queries";
  * known to be a member of (resolved by getActiveWorkspace). RLS still scopes
  * every query to the caller's memberships.
  */
-export async function getWorkspaceOverview(workspace: WorkspaceSummary) {
+export async function getWorkspaceOverview(workspace: WorkspaceSummary, today?: string) {
   const supabase = await createClient();
   const id = workspace.businessId;
 
@@ -26,7 +26,40 @@ export async function getWorkspaceOverview(workspace: WorkspaceSummary) {
     }
   }
 
+  // Hotel metrics, computed from reservations for the business's "today".
+  let hotel: { arrivals: number; departures: number; inHouse: number; occupancyPct: number | null; upcoming: number; aiBookings30d: number } | null = null;
+  if (workspace.industry === "hotel" && today) {
+    const [{ data: active }, { count: upcoming }, { count: ai }, { count: bookable }] = await Promise.all([
+      supabase
+        .from("reservations")
+        .select("check_in, check_out, status")
+        .eq("business_id", id)
+        .in("status", ["confirmed", "checked_in", "checked_out", "pending"])
+        .lte("check_in", today)
+        .gte("check_out", today),
+      supabase.from("reservations").select("id", { count: "exact", head: true }).eq("business_id", id).in("status", ["pending", "confirmed"]).gt("check_in", today),
+      supabase
+        .from("reservations")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", id)
+        .in("source", ["ai_website", "ai_voice"])
+        .gte("created_at", new Date(Date.parse(`${today}T00:00:00Z`) - 30 * 86_400_000).toISOString()),
+      supabase.from("rooms").select("id", { count: "exact", head: true }).eq("business_id", id).eq("status", "available"),
+    ]);
+    const rows = active ?? [];
+    const tonight = rows.filter((r) => r.check_in <= today && r.check_out > today && r.status !== "checked_out").length;
+    hotel = {
+      arrivals: rows.filter((r) => r.check_in === today && r.status !== "checked_out").length,
+      departures: rows.filter((r) => r.check_out === today).length,
+      inHouse: rows.filter((r) => r.status === "checked_in").length,
+      occupancyPct: bookable ? Math.round((tonight / bookable) * 100) : null,
+      upcoming: upcoming ?? 0,
+      aiBookings30d: ai ?? 0,
+    };
+  }
+
   return {
+    hotel,
     timezone: business.data!.timezone,
     subscription: subscription.data,
     agents: agents.data ?? [],

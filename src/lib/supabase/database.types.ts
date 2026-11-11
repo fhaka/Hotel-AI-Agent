@@ -631,19 +631,137 @@ export type Database = {
         };
         Relationships: [];
       };
+      reservation_events: {
+        Row: {
+          actor_id: string | null;
+          business_id: string;
+          created_at: string;
+          event_type: string;
+          from_status: Database["public"]["Enums"]["reservation_status"] | null;
+          id: number;
+          metadata: NonNullable<Json>;
+          reservation_id: string;
+          to_status: Database["public"]["Enums"]["reservation_status"] | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id?: string | null;
+          business_id: string;
+          created_at?: string;
+          event_type: string;
+          from_status?:
+            Database["public"]["Enums"]["reservation_status"] | null;
+          id?: never;
+          metadata?: NonNullable<Json>;
+          reservation_id: string;
+          to_status?: Database["public"]["Enums"]["reservation_status"] | null;
+        };
+        Update: {
+          actor_id?: string | null;
+          business_id?: string;
+          created_at?: string;
+          event_type?: string;
+          from_status?:
+            Database["public"]["Enums"]["reservation_status"] | null;
+          id?: never;
+          metadata?: NonNullable<Json>;
+          reservation_id?: string;
+          to_status?: Database["public"]["Enums"]["reservation_status"] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reservation_events_business_id_reservation_id_fkey";
+            columns: ["business_id", "reservation_id"];
+            isOneToOne: false;
+            referencedRelation: "reservations";
+            referencedColumns: ["business_id", "id"];
+          },
+        ];
+      };
+      reservation_quotes: {
+        Row: {
+          business_id: string;
+          check_in: string;
+          check_out: string;
+          conversation_id: string;
+          created_at: string;
+          created_in_message_id: number;
+          currency: string;
+          expires_at: string;
+          guests_count: number;
+          id: string;
+          reservation_id: string | null;
+          room_type_id: string;
+          total_price_cents: number;
+          used_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          business_id: string;
+          check_in: string;
+          check_out: string;
+          conversation_id: string;
+          created_at?: string;
+          created_in_message_id: number;
+          currency: string;
+          expires_at: string;
+          guests_count: number;
+          id?: string;
+          reservation_id?: string | null;
+          room_type_id: string;
+          total_price_cents: number;
+          used_at?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          check_in?: string;
+          check_out?: string;
+          conversation_id?: string;
+          created_at?: string;
+          created_in_message_id?: number;
+          currency?: string;
+          expires_at?: string;
+          guests_count?: number;
+          id?: string;
+          reservation_id?: string | null;
+          room_type_id?: string;
+          total_price_cents?: number;
+          used_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reservation_quotes_business_id_conversation_id_fkey";
+            columns: ["business_id", "conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "agent_conversations";
+            referencedColumns: ["business_id", "id"];
+          },
+          {
+            foreignKeyName: "reservation_quotes_business_id_room_type_id_fkey";
+            columns: ["business_id", "room_type_id"];
+            isOneToOne: false;
+            referencedRelation: "room_types";
+            referencedColumns: ["business_id", "id"];
+          },
+        ];
+      };
       reservations: {
         Row: {
           business_id: string;
           canceled_at: string | null;
+          canceled_by: string | null;
+          cancellation_reason: string | null;
           check_in: string;
           check_out: string;
           confirmation_reference: string;
+          conversation_id: string | null;
           created_at: string;
           created_by: string | null;
           currency: string;
           guest_id: string;
           guests_count: number;
           id: string;
+          idempotency_key: string | null;
           room_id: string;
           source: Database["public"]["Enums"]["reservation_source"];
           special_requests: string | null;
@@ -655,15 +773,19 @@ export type Database = {
         Insert: {
           business_id: string;
           canceled_at?: string | null;
+          canceled_by?: string | null;
+          cancellation_reason?: string | null;
           check_in: string;
           check_out: string;
           confirmation_reference?: string;
+          conversation_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           currency?: string;
           guest_id: string;
           guests_count: number;
           id?: string;
+          idempotency_key?: string | null;
           room_id: string;
           source?: Database["public"]["Enums"]["reservation_source"];
           special_requests?: string | null;
@@ -674,15 +796,19 @@ export type Database = {
         Update: {
           business_id?: string;
           canceled_at?: string | null;
+          canceled_by?: string | null;
+          cancellation_reason?: string | null;
           check_in?: string;
           check_out?: string;
           confirmation_reference?: string;
+          conversation_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           currency?: string;
           guest_id?: string;
           guests_count?: number;
           id?: string;
+          idempotency_key?: string | null;
           room_id?: string;
           source?: Database["public"]["Enums"]["reservation_source"];
           special_requests?: string | null;
@@ -710,6 +836,13 @@ export type Database = {
             columns: ["business_id", "room_id"];
             isOneToOne: false;
             referencedRelation: "rooms";
+            referencedColumns: ["business_id", "id"];
+          },
+          {
+            foreignKeyName: "reservations_conversation_fk";
+            columns: ["business_id", "conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "agent_conversations";
             referencedColumns: ["business_id", "id"];
           },
         ];
@@ -1071,6 +1204,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      cancel_reservation: {
+        Args: { p_reason: string; p_reservation_id: string };
+        Returns: Json;
+      };
       complete_agent_turn: {
         Args: {
           p_agent_id: string;
@@ -1121,6 +1258,45 @@ export type Database = {
         };
         Returns: string;
       };
+      create_reservation: {
+        Args: {
+          p_business_id: string;
+          p_check_in: string;
+          p_check_out: string;
+          p_guest: Json;
+          p_guests: number;
+          p_idempotency_key: string;
+          p_room_id: string;
+          p_room_type_id: string;
+          p_special_requests: string;
+        };
+        Returns: Json;
+      };
+      create_reservation_quote_service: {
+        Args: {
+          p_business_id: string;
+          p_check_in: string;
+          p_check_out: string;
+          p_conversation_id: string;
+          p_guests: number;
+          p_message_id: number;
+          p_room_type_id: string;
+        };
+        Returns: Json;
+      };
+      create_reservation_service: {
+        Args: {
+          p_business_id: string;
+          p_conversation_id: string;
+          p_customer_message_id: number;
+          p_dry_run: boolean;
+          p_guest: Json;
+          p_quote_id: string;
+          p_source: Database["public"]["Enums"]["reservation_source"];
+          p_special_requests: string;
+        };
+        Returns: Json;
+      };
       escalate_conversation: {
         Args: {
           p_business_id: string;
@@ -1147,6 +1323,23 @@ export type Database = {
         Returns: Json;
       };
       get_invitation_preview: { Args: { p_token: string }; Returns: Json };
+      get_reservation_service: {
+        Args: { p_business_id: string; p_email: string; p_reference: string };
+        Returns: Json;
+      };
+      log_reservation_email: {
+        Args: { p_kind: string; p_reservation_id: string; p_status: string };
+        Returns: undefined;
+      };
+      modify_reservation: {
+        Args: {
+          p_check_in: string;
+          p_check_out: string;
+          p_guests: number;
+          p_reservation_id: string;
+        };
+        Returns: Json;
+      };
       purge_expired_conversations: {
         Args: Record<PropertyKey, never>;
         Returns: number;
@@ -1154,6 +1347,16 @@ export type Database = {
       remove_business_member: {
         Args: { p_business_id: string; p_user_id: string };
         Returns: undefined;
+      };
+      request_cancellation_service: {
+        Args: {
+          p_business_id: string;
+          p_conversation_id: string;
+          p_email: string;
+          p_reason: string;
+          p_reference: string;
+        };
+        Returns: Json;
       };
       revoke_business_invitation: {
         Args: { p_invitation_id: string };
@@ -1196,6 +1399,26 @@ export type Database = {
           updated_at: string;
         }[];
       };
+      search_room_availability: {
+        Args: {
+          p_business_id: string;
+          p_check_in: string;
+          p_check_out: string;
+          p_guests: number;
+        };
+        Returns: {
+          amenities: string[];
+          available_rooms: number;
+          bed_configuration: string;
+          currency: string;
+          description: string;
+          maximum_guests: number;
+          name: string;
+          nights: number;
+          room_type_id: string;
+          total_price_cents: number;
+        }[];
+      };
       update_member_role: {
         Args: {
           p_business_id: string;
@@ -1203,6 +1426,13 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      update_reservation_status: {
+        Args: {
+          p_reservation_id: string;
+          p_status: Database["public"]["Enums"]["reservation_status"];
+        };
+        Returns: Json;
       };
     };
     Enums: {

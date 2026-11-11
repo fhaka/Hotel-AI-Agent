@@ -24,6 +24,9 @@ export type HotelDefaults = {
   checkInTime: string;
   checkOutTime: string;
   currency: string;
+  maxNights: string;
+  freeCancellationHours: string;
+  aiCanCancel: boolean;
   cancellation: string;
   breakfast: string;
   parking: string;
@@ -75,6 +78,34 @@ export function HotelForm({
             error={errors.currency}
           />
         </div>
+      </FormSection>
+
+      <FormSection
+        title="Booking rules"
+        description="Used by the reservation engine and the AI reservation assistant."
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Maximum stay (nights)" name="maxNights" type="number" min={1} max={90} defaultValue={defaults.maxNights} error={errors.maxNights} />
+          <Field
+            label="Free cancellation until (hours before check-in)"
+            name="freeCancellationHours"
+            type="number"
+            min={0}
+            max={720}
+            defaultValue={defaults.freeCancellationHours}
+            error={errors.freeCancellationHours}
+          />
+        </div>
+        <label className="flex items-start gap-3">
+          <input type="checkbox" name="aiCanCancel" defaultChecked={defaults.aiCanCancel} className="mt-1 h-4 w-4 accent-brand-600" />
+          <span>
+            <span className="block text-sm font-medium">Let the AI assistant cancel bookings within the free cancellation period</span>
+            <span className="block text-sm text-muted">
+              The guest must give the booking reference and the email used for the booking. Otherwise, and always outside the
+              free period, cancellation requests are handed to your team.
+            </span>
+          </span>
+        </label>
       </FormSection>
 
       <FormSection title="Guest information" description="Agents answer guest questions from exactly what you write here.">

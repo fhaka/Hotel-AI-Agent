@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { addMember, asUser, createUser, createWorkspace, pool } from "./helpers";
+import { addMember, asService, asUser, createUser, createWorkspace, pool } from "./helpers";
 
 let owner: string;
 let staff: string;
@@ -38,22 +38,26 @@ afterAll(async () => {
   await pool.end();
 });
 
-function book(userId: string, checkIn: string, checkOut: string, opts: { commit?: boolean } = {}) {
-  return asUser(
-    userId,
-    (db) =>
-      db.query(
-        `insert into public.reservations
-           (business_id, room_id, guest_id, check_in, check_out, guests_count, total_price_cents, status, created_by)
-         values ($1, $2, $3, $4, $5, 2, 24000, 'confirmed', auth.uid()) returning id, confirmation_reference`,
-        [businessId, roomId, guestId, checkIn, checkOut],
-      ),
-    opts,
+/**
+ * Raw inserts that exercise the database constraints directly. Since
+ * migration 9, members can only book through create_reservation(); these
+ * run as the service role, which the constraints still bind.
+ * (`opts.commit` is accepted for readability; service-role calls always commit,
+ * so each test uses distinct dates.)
+ */
+function book(userId: string, checkIn: string, checkOut: string, _opts: { commit?: boolean } = {}) {
+  return asService((db) =>
+    db.query(
+      `insert into public.reservations
+         (business_id, room_id, guest_id, check_in, check_out, guests_count, total_price_cents, status, created_by)
+       values ($1, $2, $3, $4, $5, 2, 24000, 'confirmed', $6) returning id, confirmation_reference`,
+      [businessId, roomId, guestId, checkIn, checkOut, userId],
+    ),
   );
 }
 
 describe("reservations", () => {
-  it("staff can create a valid booking", async () => {
+  it("accepts a valid booking", async () => {
     const res = await book(staff, "2027-03-01", "2027-03-03");
     expect(res.rows[0].confirmation_reference).toMatch(/^[0-9A-F]{10}$/);
   });
@@ -76,14 +80,9 @@ describe("reservations", () => {
 
   it("frees the room once a reservation is canceled", async () => {
     const res = await book(owner, "2027-06-01", "2027-06-04", { commit: true });
-    await asUser(
-      owner,
-      (db) =>
-        db.query("update public.reservations set status = 'canceled', canceled_at = now() where id = $1", [
-          res.rows[0].id,
-        ]),
-      { commit: true },
-    );
+    await asUser(owner, (db) => db.query("select public.cancel_reservation($1, 'Guest called')", [res.rows[0].id]), {
+      commit: true,
+    });
     await expect(book(staff, "2027-06-02", "2027-06-03")).resolves.toBeTruthy();
   });
 
@@ -108,15 +107,18 @@ describe("reservations", () => {
     ).rejects.toMatchObject({ code: "42501" });
   });
 
-  it("a reservation cannot be attributed to another user", async () => {
+  it("members cannot insert or freely update reservations (must use the booking functions)", async () => {
     await expect(
       asUser(staff, (db) =>
         db.query(
           `insert into public.reservations (business_id, room_id, guest_id, check_in, check_out, guests_count, total_price_cents, created_by)
-           values ($1, $2, $3, '2027-08-01', '2027-08-02', 1, 100, $4)`,
-          [businessId, roomId, guestId, owner],
+           values ($1, $2, $3, '2027-08-01', '2027-08-02', 1, 100, auth.uid())`,
+          [businessId, roomId, guestId],
         ),
       ),
+    ).rejects.toMatchObject({ code: "42501" });
+    await expect(
+      asUser(owner, (db) => db.query("update public.reservations set total_price_cents = 1 where business_id = $1", [businessId])),
     ).rejects.toMatchObject({ code: "42501" });
   });
 });

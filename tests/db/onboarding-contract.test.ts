@@ -89,6 +89,9 @@ describe("onboarding wizard contract (form -> schema -> SQL)", () => {
           checkInTime: "14:00",
           checkOutTime: "11:00",
           currency: "EUR",
+          maxNights: "21",
+          freeCancellationHours: "72",
+          aiCanCancel: "on",
           cancellation: "Free until 3 days before arrival",
           breakfast: "Included, 7:00–10:00",
           parking: "Free on site",
@@ -145,7 +148,14 @@ describe("onboarding wizard contract (form -> schema -> SQL)", () => {
       cancellation: "Free until 3 days before arrival",
       contact_instructions: "Call reception for urgent requests",
     });
-    expect(result.settings.booking_settings).toEqual({ check_in_time: "14:00", check_out_time: "11:00", currency: "EUR" });
+    expect(result.settings.booking_settings).toEqual({
+      check_in_time: "14:00",
+      check_out_time: "11:00",
+      currency: "EUR",
+      max_nights: 21,
+      free_cancellation_hours: 72,
+      ai_can_cancel: true,
+    });
   });
 
   it("a non-hotel business finishes after the operations step", async () => {

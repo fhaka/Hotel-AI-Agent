@@ -5,7 +5,11 @@ import type { CurrentUser } from "@/lib/auth/session";
 import { formatInZone } from "@/lib/billing/trial";
 import { checkAgentExecution } from "@/lib/entitlements/evaluate";
 import { EntitlementError, getBusinessEntitlements } from "@/lib/entitlements/service";
-import { formatKnowledgeContext, sanitizeKnowledgeText } from "@/lib/knowledge/context";
+import { formatCurrency, formatKnowledgeContext, sanitizeKnowledgeText, type KnowledgeSources } from "@/lib/knowledge/context";
+import { sendReservationEmail } from "@/lib/reservations/notify";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/database.types";
+import type { ReservationServices } from "./reservation-tools";
 import { loadKnowledgeSources } from "@/lib/knowledge/load";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -159,10 +163,23 @@ export async function runPlaygroundTurn(
           if (error) throw new Error("escalation_failed");
           return Boolean(data);
         },
+        reservations:
+          agent.agent_type === "reservation_assistant"
+            ? await reservationServices(admin, {
+                businessId,
+                conversationId: turn.conversation_id,
+                customerMessageId: turn.customer_message_id,
+                sources,
+                dryRun: true, // playground: bookings are validated but never saved
+              })
+            : undefined,
       },
     };
 
     const result = await runToolLoop({
+      // References/numbers from earlier messages and the business's own
+      // knowledge (e.g. its phone number) are known; only invented ones are blocked.
+      priorText: [...(past ?? []).map((m) => m.content), knowledge.text],
       model,
       instructions: buildInstructions({
         agentType: agent.agent_type,
@@ -221,4 +238,141 @@ export async function runPlaygroundTurn(
       .then(({ error }) => error && console.error("[agent] fail_agent_turn failed", { code: error.code }));
     throw agentError;
   }
+}
+
+
+/**
+ * Booking services for the reservation assistant. Every call uses the
+ * server-resolved businessId/conversationId; the model only supplies
+ * validated values (dates, counts, room type names, quote ids it was given).
+ */
+async function reservationServices(
+  admin: SupabaseClient<Database>,
+  turn: { businessId: string; conversationId: string; customerMessageId: number; sources: KnowledgeSources; dryRun: boolean },
+): Promise<ReservationServices> {
+  const { data: roomTypes } = await admin
+    .from("room_types")
+    .select("id, name, description, maximum_guests, bed_configuration, amenities, base_price_cents, currency")
+    .eq("business_id", turn.businessId)
+    .eq("is_active", true)
+    .order("base_price_cents");
+  const types = roomTypes ?? [];
+  const byName = (name: string) => types.find((t) => t.name.trim().toLowerCase() === name.trim().toLowerCase());
+  const settings = (turn.sources.settings ?? {}) as { booking_settings?: Record<string, unknown>; policies?: Record<string, unknown> };
+  const booking = settings.booking_settings ?? {};
+  const policies = settings.policies ?? {};
+  const describe = (t: (typeof types)[number]) => ({
+    room_type: t.name,
+    max_guests: t.maximum_guests,
+    beds: t.bed_configuration,
+    amenities: t.amenities,
+    description: t.description ? sanitizeKnowledgeText(t.description) : null,
+    base_price_per_night: formatCurrency(t.base_price_cents, t.currency),
+  });
+  const dbMessage = (message: string) => message.replace(/^.*?: /, "").slice(0, 200);
+
+  return {
+    async hotelInformation() {
+      return {
+        check_in_from: booking.check_in_time ?? null,
+        check_out_by: booking.check_out_time ?? null,
+        currency: booking.currency ?? null,
+        max_nights: booking.max_nights ?? 30,
+        free_cancellation_hours_before_check_in: booking.free_cancellation_hours ?? 48,
+        cancellation_policy: typeof policies.cancellation === "string" ? sanitizeKnowledgeText(policies.cancellation) : null,
+        room_types: types.map(describe),
+      };
+    },
+    async roomDetails(name) {
+      const t = byName(name);
+      return t ? describe(t) : null;
+    },
+    async searchAvailability(checkIn, checkOut, guests) {
+      const { data, error } = await admin.rpc("search_room_availability", {
+        p_business_id: turn.businessId,
+        p_check_in: checkIn,
+        p_check_out: checkOut,
+        p_guests: guests,
+      });
+      if (error) {
+        if (error.code === "22023") return { error: dbMessage(error.message) };
+        throw new Error("availability_failed");
+      }
+      return {
+        results: (data ?? []).map((r) => ({
+          room_type: r.name,
+          max_guests: r.maximum_guests,
+          available_rooms: r.available_rooms,
+          nights: r.nights,
+          total_price: formatCurrency(r.total_price_cents, r.currency),
+        })),
+      };
+    },
+    async quote(name, checkIn, checkOut, guests) {
+      const t = byName(name);
+      if (!t) return { available: false, reason: "room_type_not_found", room_types: types.map((x) => x.name) };
+      const { data, error } = await admin.rpc("create_reservation_quote_service", {
+        p_business_id: turn.businessId,
+        p_conversation_id: turn.conversationId,
+        p_message_id: turn.customerMessageId,
+        p_room_type_id: t.id,
+        p_check_in: checkIn,
+        p_check_out: checkOut,
+        p_guests: guests,
+      });
+      if (error) {
+        if (error.code === "22023") return { available: false, reason: "invalid_request", message: dbMessage(error.message) };
+        throw new Error("quote_failed");
+      }
+      const q = data as Record<string, unknown>;
+      return q.available
+        ? { ...q, total_price: formatCurrency(Number(q.total_price_cents), String(q.currency)) }
+        : q;
+    },
+    async createReservation(input) {
+      const { data, error } = await admin.rpc("create_reservation_service", {
+        p_business_id: turn.businessId,
+        p_conversation_id: turn.conversationId,
+        p_customer_message_id: turn.customerMessageId,
+        p_quote_id: input.quoteId,
+        p_guest: { full_name: input.fullName, email: input.email, phone: input.phone },
+        p_special_requests: input.specialRequests as string,
+        p_source: "ai_website",
+        p_dry_run: turn.dryRun,
+      });
+      if (error) throw new Error("booking_failed");
+      const result = data as Record<string, unknown> & { reservation?: { id?: string | null } };
+      if (result.ok && !result.dry_run && !result.duplicate && result.reservation?.id) {
+        // Only after the database committed the booking.
+        const sent = await sendReservationEmail(admin, result.reservation.id, "confirmation");
+        return { ...result, confirmation_email: sent.status === "sent" ? "sent" : "not_sent" };
+      }
+      return result;
+    },
+    async getReservation(reference, email) {
+      const { data, error } = await admin.rpc("get_reservation_service", {
+        p_business_id: turn.businessId,
+        p_reference: reference,
+        p_email: email,
+      });
+      if (error) throw new Error("lookup_failed");
+      return data as Record<string, unknown>;
+    },
+    async requestCancellation(reference, email, reason) {
+      if (turn.dryRun) {
+        return { ok: true, dry_run: true, canceled: false, note: "Playground: cancellation requests are not executed." };
+      }
+      const { data, error } = await admin.rpc("request_cancellation_service", {
+        p_business_id: turn.businessId,
+        p_conversation_id: turn.conversationId,
+        p_reference: reference,
+        p_email: email,
+        p_reason: reason as string,
+      });
+      if (error) throw new Error("cancellation_failed");
+      const result = data as Record<string, unknown> & { reservation?: { id?: string } };
+      if (result.canceled && result.reservation?.id) await sendReservationEmail(admin, result.reservation.id, "cancellation");
+      return result;
+    },
+  };
 }

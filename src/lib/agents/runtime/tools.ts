@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AgentType } from "@/lib/entitlements/snapshot";
+import { reservationTools, type ReservationServices } from "./reservation-tools";
 import type { ToolSpec } from "./types";
 
 /**
@@ -15,6 +16,8 @@ export type ToolResult = {
   /** Short, non-sensitive description stored in the transcript. */
   summary: string;
   escalated?: boolean;
+  /** Confirmation references this result proves exist (reply guard allow-list). */
+  references?: string[];
 };
 
 export type ToolContext = {
@@ -26,6 +29,8 @@ export type ToolContext = {
   services: {
     searchKnowledge(query: string): Promise<{ title: string; content: string; category: string }[]>;
     escalate(details: Record<string, unknown>): Promise<boolean>;
+    /** Present for agents with booking tools. */
+    reservations?: ReservationServices;
   };
 };
 
@@ -107,7 +112,7 @@ export const humanHandoffTool = defineTool({
   },
 });
 
-export const ALL_TOOLS: AnyTool[] = [searchKnowledgeTool, humanHandoffTool];
+export const ALL_TOOLS: AnyTool[] = [searchKnowledgeTool, humanHandoffTool, ...(reservationTools as unknown as AnyTool[])];
 
 export function toolsFor(agentType: AgentType): AnyTool[] {
   return ALL_TOOLS.filter((t) => t.agentTypes.includes(agentType));

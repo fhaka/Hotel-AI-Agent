@@ -193,6 +193,13 @@ export const hotelSchema = z
     checkInTime: time,
     checkOutTime: time,
     currency: z.string().refine((v) => CURRENCIES.includes(v), "Choose a currency"),
+    maxNights: z.coerce.number({ error: "Enter a number" }).int("Use a whole number").min(1, "At least 1 night").max(90, "At most 90 nights"),
+    freeCancellationHours: z.coerce
+      .number({ error: "Enter a number of hours" })
+      .int("Use whole hours")
+      .min(0, "Can't be negative")
+      .max(720, "At most 720 hours (30 days)"),
+    aiCanCancel: z.boolean(),
     policies: z.object({
       cancellation: optionalText(3000, "Cancellation policy"),
       breakfast: optionalText(2000, "Breakfast information"),
@@ -245,6 +252,9 @@ export function hotelFromFormData(fd: FormData) {
     checkInTime: str(fd, "checkInTime"),
     checkOutTime: str(fd, "checkOutTime"),
     currency: str(fd, "currency"),
+    maxNights: str(fd, "maxNights") || "30",
+    freeCancellationHours: str(fd, "freeCancellationHours") || "48",
+    aiCanCancel: fd.get("aiCanCancel") === "on",
     policies: {
       cancellation: str(fd, "cancellation"),
       breakfast: str(fd, "breakfast"),
