@@ -253,6 +253,57 @@ export type Database = {
           },
         ];
       };
+      business_invitations: {
+        Row: {
+          accepted_at: string | null;
+          accepted_by: string | null;
+          business_id: string;
+          created_at: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          invited_by: string | null;
+          revoked_at: string | null;
+          role: Database["public"]["Enums"]["business_role"];
+          token_hash: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          business_id: string;
+          created_at?: string;
+          email: string;
+          expires_at: string;
+          id?: string;
+          invited_by?: string | null;
+          revoked_at?: string | null;
+          role: Database["public"]["Enums"]["business_role"];
+          token_hash: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          business_id?: string;
+          created_at?: string;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string | null;
+          revoked_at?: string | null;
+          role?: Database["public"]["Enums"]["business_role"];
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "business_invitations_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       business_members: {
         Row: {
           business_id: string;
@@ -980,9 +1031,25 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      accept_business_invitation: {
+        Args: { p_token: string };
+        Returns: string;
+      };
       complete_onboarding: {
         Args: { p_business_id: string };
         Returns: undefined;
+      };
+      create_business_invitation: {
+        Args: {
+          p_business_id: string;
+          p_email: string;
+          p_role: Database["public"]["Enums"]["business_role"];
+        };
+        Returns: {
+          expires_at: string;
+          invitation_id: string;
+          token: string;
+        }[];
       };
       create_business_workspace: {
         Args: {
@@ -1001,8 +1068,21 @@ export type Database = {
         };
         Returns: string;
       };
+      get_business_entitlements: {
+        Args: { p_business_id: string };
+        Returns: Json;
+      };
+      get_business_entitlements_service: {
+        Args: { p_business_id: string };
+        Returns: Json;
+      };
+      get_invitation_preview: { Args: { p_token: string }; Returns: Json };
       remove_business_member: {
         Args: { p_business_id: string; p_user_id: string };
+        Returns: undefined;
+      };
+      revoke_business_invitation: {
+        Args: { p_invitation_id: string };
         Returns: undefined;
       };
       save_onboarding_hotel: {

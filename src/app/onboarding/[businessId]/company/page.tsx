@@ -13,7 +13,7 @@ export default function CompanyStepPage({ params }: PageProps<"/onboarding/[busi
       {(ctx) => (
         <CompanyForm
           mode="edit"
-          action={updateCompany.bind(null, ctx.business.id)}
+          action={updateCompany.bind(null, ctx.business.id, null)}
           defaults={companyDefaults(ctx.business)}
           countries={countryOptions()}
           timeZones={timeZoneOptions()}

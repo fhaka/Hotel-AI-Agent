@@ -36,13 +36,15 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
     return { status: "error", fieldErrors: toFieldErrors(parsed.error), values };
   }
 
+  // Where to land after verifying (e.g. an invitation link); same-origin paths only.
+  const next = safeRedirectPath(raw.next, "/onboarding");
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.fullName },
-      emailRedirectTo: appUrl("/auth/callback?next=/onboarding"),
+      emailRedirectTo: appUrl(`/auth/callback?next=${encodeURIComponent(next)}`),
     },
   });
 

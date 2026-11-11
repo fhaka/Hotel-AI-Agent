@@ -17,7 +17,7 @@ export default function OperationsStepPage({ params }: PageProps<"/onboarding/[b
     >
       {(ctx) => (
         <OperationsForm
-          action={saveOperations.bind(null, ctx.business.id)}
+          action={saveOperations.bind(null, ctx.business.id, null)}
           defaults={operationsDefaults(ctx)}
           isHotel={ctx.business.industry === "hotel"}
           backHref={stepPath(ctx.business.id, "company")}

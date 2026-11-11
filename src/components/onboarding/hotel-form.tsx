@@ -48,11 +48,13 @@ export function HotelForm({
   defaults,
   backHref,
   roomsLocked,
+  submitLabel = "Save & continue",
 }: {
   action: (state: StepFormState, formData: FormData) => Promise<StepFormState>;
   defaults: HotelDefaults;
-  backHref: string;
+  backHref?: string;
   roomsLocked: boolean;
+  submitLabel?: string;
 }) {
   const { state, pending, dispatch, onSubmit } = useStepAction(action);
   const errors = state.fieldErrors ?? {};
@@ -120,7 +122,7 @@ export function HotelForm({
         />
       </FormSection>
 
-      <StepActions pending={pending} submitLabel="Save & continue" backHref={backHref} />
+      <StepActions pending={pending} submitLabel={submitLabel} backHref={backHref} />
     </form>
   );
 }

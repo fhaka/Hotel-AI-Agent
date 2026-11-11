@@ -1,6 +1,6 @@
 # HotelAI — Implementation Plan
 
-Living document. Updated at the end of every phase. Last update: **Phase 2 complete** (2026-11-12).
+Living document. Updated at the end of every phase. Last update: **Phase 3 complete** (2026-11-13).
 
 ## Repository status at start
 
@@ -32,6 +32,7 @@ Recorded in [`docs/architecture/`](docs/architecture):
 - [0002 — Multi-tenancy and Row Level Security](docs/architecture/0002-multi-tenancy-and-rls.md)
 - [0003 — Trials, subscriptions and entitlements](docs/architecture/0003-trials-and-entitlements.md)
 - [0004 — Onboarding wizard and active workspace](docs/architecture/0004-onboarding-and-active-workspace.md)
+- [0005 — Entitlement service and team invitations](docs/architecture/0005-entitlements-and-team.md)
 
 ## Phases
 
@@ -86,14 +87,27 @@ membership, trial and default agents are stored correctly":** verified at the da
 argument builders as the Server Actions into the real SQL functions. **Not yet verified by clicking
 through the UI against a live Supabase project** (see "Known gaps").
 
-### Phase 3 — SaaS dashboard ⬜
+### Phase 3 — SaaS dashboard ✅
 
-- Sidebar navigation, business switcher, dashboard overview with real data and empty states.
-- Sidebar navigation for the workspace area (switcher already exists in the header).
-- Server-side entitlement service `getBusinessEntitlements(businessId, userId)`.
-- Trial countdown (displayed in the business time zone), usage display, upgrade screens.
-- Team management UI using `update_member_role` / `remove_business_member`; invitations flow.
-- Business settings editing.
+| Item | Status |
+|---|---|
+| Central entitlement service: SQL facts (DB clock) + pure TS decisions, `getBusinessEntitlements()`, 7-point agent execution check with stable error codes | ✅ |
+| Workspace layout: sidebar (only real pages), business switcher, trial/usage/payment warning banner | ✅ |
+| Overview: plan, trial countdown, AI usage meter, agents, knowledge and room counts | ✅ |
+| Plan & usage page: status, trial end in business time zone, usage meters, plan catalogue from the database | ✅ (checkout: Phase 7) |
+| Team: members, role changes, remove/leave (confirmation dialogs), seat limits | ✅ |
+| Invitations: hashed single-use tokens, verified-email match, 7-day expiry, re-send/revoke, invite landing page, sign-up/verification carries the invite | ✅ |
+| Invitation email via Resend (official SDK) with idempotency; honest fallback to a copyable link | ✅ (live sending untested — needs your Resend key) |
+| Agent management: list, configure name/description/on-off/tone/greeting/hand-over/instructions; unavailable agents can't be enabled | ✅ |
+| Business settings (profile, hours/policies/FAQs, hotel & rooms) reusing the onboarding forms | ✅ |
+| Account settings: name, password-change link, sign out | ✅ |
+| Audit triggers for agent/business/settings/subscription changes (column names only) | ✅ |
+
+**Acceptance criteria — "a business owner can manage their workspace and see accurate subscription
+status":** subscription/usage facts come from one database function evaluated on the database
+clock and are covered by DB tests for every status (trial active/expired, active, past_due,
+canceled before/after period end, incomplete). UI click-through against live Supabase still pending
+(see Known gaps).
 
 ### Phase 4 — Knowledge base ⬜
 
@@ -101,6 +115,8 @@ through the UI against a live Supabase project** (see "Known gaps").
 - Private Supabase Storage bucket for documents (later in phase; type/size limits).
 
 ### Phase 5 — AI playground ⬜
+
+- Agent runtime must call `checkAgentExecution()` (already implemented) before every model call.
 
 - OpenAI Responses API integration (model from `OPENAI_MODEL`; verify current docs first).
 - Shared agent runtime: entitlement check → load business config/knowledge → tool calling with Zod
@@ -139,8 +155,10 @@ notice, terms, DPA, retention, call-recording consent), deployment.
    tests, but the click-through must be checked manually (README) or in CI with a Supabase stack.
 2. Trial abuse via *new email addresses* is not prevented (one trial per user account only). Stronger
    signals (verified phone, payment-method fingerprint, domain heuristics) can be added later.
-3. Supabase Auth email sending uses Supabase's built-in SMTP by default, which is heavily
+3. Resend invitation emails are implemented against the SDK's types but have not been sent for
+   real (no API key here; resend.com docs were also unreachable from this sandbox).
+4. Supabase Auth email sending uses Supabase's built-in SMTP by default, which is heavily
    rate-limited — configure custom SMTP (e.g. Resend) before real users sign up.
-4. No Content Security Policy yet (baseline security headers are set).
-5. `/admin` is protected by login but has no pages yet; platform-admin authorization uses
+5. No Content Security Policy yet (baseline security headers are set).
+6. `/admin` is protected by login but has no pages yet; platform-admin authorization uses
    `public.platform_admins`, writable only with the service role.

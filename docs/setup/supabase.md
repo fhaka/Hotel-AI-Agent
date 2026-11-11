@@ -35,7 +35,11 @@ npx supabase db push
   *Redirect URLs*.
 - **Email Templates** (recommended — links then work even if opened on another device):
   - *Confirm signup* link:
-    `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&next=/onboarding`
+    `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`
+    (`RedirectTo` is the app's `/auth/callback?next=…` URL, so a person who signed up from a team
+    invitation returns to that invitation. It already contains `?`, hence the `&`. The Redirect
+    URLs allow-list must include `http://localhost:3000/**` / your domain, otherwise Supabase
+    substitutes the Site URL and the link breaks.)
   - *Reset password* link:
     `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery`
 

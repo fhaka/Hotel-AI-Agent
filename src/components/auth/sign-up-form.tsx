@@ -9,7 +9,7 @@ import { SubmitButton } from "./submit-button";
 
 const initial: AuthFormState = { status: "idle" };
 
-export function SignUpForm() {
+export function SignUpForm({ next, email }: { next?: string; email?: string }) {
   const [state, action] = useActionState(signUp, initial);
 
   if (state.status === "success") {
@@ -22,6 +22,7 @@ export function SignUpForm() {
 
   return (
     <form action={action} className="space-y-4" noValidate>
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       {state.message ? <Alert tone="danger">{state.message}</Alert> : null}
       <Field
         label="Full name"
@@ -37,7 +38,7 @@ export function SignUpForm() {
         type="email"
         autoComplete="email"
         required
-        defaultValue={state.values?.email}
+        defaultValue={state.values?.email ?? email}
         error={state.fieldErrors?.email}
       />
       <Field
@@ -51,9 +52,11 @@ export function SignUpForm() {
         error={state.fieldErrors?.password}
       />
       <SubmitButton pendingLabel="Creating account…">Create account</SubmitButton>
-      <p className="text-xs text-muted">
-        Your 7-day free trial starts when you create your business workspace. No payment card required.
-      </p>
+      {next?.startsWith("/invite/") ? null : (
+        <p className="text-xs text-muted">
+          Your 7-day free trial starts when you create your business workspace. No payment card required.
+        </p>
+      )}
     </form>
   );
 }

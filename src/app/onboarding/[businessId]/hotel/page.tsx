@@ -26,7 +26,7 @@ export default function HotelStepPage({ params }: PageProps<"/onboarding/[busine
           .eq("business_id", ctx.business.id);
         return (
           <HotelForm
-            action={saveHotel.bind(null, ctx.business.id)}
+            action={saveHotel.bind(null, ctx.business.id, null)}
             defaults={hotelDefaults(ctx)}
             backHref={stepPath(ctx.business.id, "operations")}
             roomsLocked={(count ?? 0) > 0}

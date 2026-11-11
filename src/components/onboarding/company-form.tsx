@@ -29,12 +29,14 @@ export function CompanyForm({
   defaults,
   countries,
   timeZones,
+  submitLabel,
 }: {
   mode: "create" | "edit";
   action: (state: StepFormState, formData: FormData) => Promise<StepFormState>;
   defaults: CompanyDefaults;
   countries: { code: string; label: string }[];
   timeZones: string[];
+  submitLabel?: string;
 }) {
   const { state, pending, dispatch, onSubmit } = useStepAction(action);
   const errors = state.fieldErrors ?? {};
@@ -150,7 +152,7 @@ export function CompanyForm({
         </p>
       ) : null}
 
-      <StepActions pending={pending} submitLabel={mode === "create" ? "Create workspace & continue" : "Save & continue"} />
+      <StepActions pending={pending} submitLabel={submitLabel ?? (mode === "create" ? "Create workspace & continue" : "Save & continue")} />
     </form>
   );
 }

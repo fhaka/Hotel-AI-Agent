@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { Alert } from "@/components/ui/alert";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireUser } from "@/lib/auth/session";
 import { formatInZone, summarizeTrial } from "@/lib/billing/trial";
+import { getBusinessEntitlements } from "@/lib/entitlements/service";
+import { UsageMeter } from "@/components/ui/usage-meter";
+import Link from "next/link";
 import { INDUSTRIES } from "@/lib/onboarding/reference-data";
 import { readCompletedSteps, resumeStep, stepPath } from "@/lib/onboarding/steps";
 import { getActiveWorkspace } from "@/lib/workspaces/active";
@@ -15,6 +17,8 @@ export const metadata: Metadata = { title: "Dashboard" };
 const NOTICES: Record<string, string> = {
   "password-updated": "Your password has been updated.",
   "onboarding-complete": "Your workspace is set up. Next, you'll be able to test your agents in the playground.",
+  "joined-workspace": "Welcome! You've joined the workspace.",
+  "left-workspace": "You left the workspace.",
 };
 
 const AGENT_STATUS: Record<string, string> = {
@@ -48,9 +52,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     );
   }
 
-  const overview = await getWorkspaceOverview(active);
-  await connection(); // the trial countdown depends on the current time
-  const trial = summarizeTrial(overview.subscription, new Date());
+  const [overview, ent] = await Promise.all([getWorkspaceOverview(active), getBusinessEntitlements(active.businessId, user)]);
+  // Evaluated against the database clock, same as access decisions.
+  const trial = summarizeTrial(overview.subscription, new Date(ent.snapshot.evaluated_at));
   const isAdmin = active.role === "owner" || active.role === "admin";
   const industry = INDUSTRIES.find((i) => i.value === active.industry)?.label ?? active.industry;
   const planName = overview.subscription?.plans?.name ?? overview.subscription?.plan_id ?? "—";
@@ -114,7 +118,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           ) : (
             <p className="mt-1 text-sm capitalize">{trial.status.replace("_", " ")}</p>
           )}
-          <p className="mt-3 text-xs text-subtle">Paid plans and checkout are not available yet.</p>
+          {ent.can("billing.view") ? (
+            <Link href="/dashboard/billing" className="mt-3 inline-block text-sm font-medium text-brand-600 hover:text-brand-700">
+              Plan & usage →
+            </Link>
+          ) : null}
         </Card>
 
         <Card className="p-5 lg:col-span-2">
@@ -133,7 +141,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </Card>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-3">
+        {ent.can("usage.view") ? (
+          <Card className="p-5">
+            <h2 className="mb-3 text-sm font-medium text-muted">AI usage this period</h2>
+            <UsageMeter label="Messages" used={ent.usage.aiMessages.used} limit={ent.usage.aiMessages.limit} />
+          </Card>
+        ) : null}
         <Card className="p-5">
           <h2 className="text-sm font-medium text-muted">Knowledge entries</h2>
           <p className="mt-2 text-2xl font-semibold">{overview.knowledgeCount}</p>

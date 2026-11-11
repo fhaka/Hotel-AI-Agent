@@ -4,7 +4,7 @@ Multi-tenant SaaS that gives hotels (and later other service businesses) AI rece
 reservation assistants, with self-service sign-up, private workspaces, a 7-day free trial and
 recurring subscriptions.
 
-> **Status:** Phases 1 (foundation) and 2 (business onboarding) complete. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
+> **Status:** Phases 1–3 complete (foundation, onboarding, SaaS dashboard & team). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 > for what exists, what does not yet, and the roadmap.
 
 ## Quick start
@@ -56,6 +56,24 @@ npm run dev                  # http://localhost:3000
 6. Create a second workspace from the switcher in the header → it shows *No free trial is
    available* (one trial per account). Switch between the two workspaces.
 
+## How to verify Phase 3 manually
+
+1. Run `npx supabase db push` (new migration) and, optionally, set `RESEND_API_KEY` /
+   `RESEND_FROM_EMAIL` in `.env.local` (verified sending domain required by Resend).
+2. **Team → Invite** a second email address as *Staff*. Without Resend configured you get a
+   copyable link and a clear notice; with Resend, an email arrives.
+3. Open the link in a private window → *Create an account* (email pre-filled) → verify email →
+   you land back on the invitation → **Accept** → dashboard of the shared workspace.
+4. As staff: Team shows no management controls, Plan & usage says owners/admins only, agent
+   settings are read-only.
+5. As owner: change the staff member's role, revoke a pending invite, remove a member (confirmation
+   dialog). Try inviting a 4th person on the trial → seat-limit message.
+6. **AI agents → Configure** the receptionist; the voice agent can't be enabled.
+7. **Business** tabs edit the same data as onboarding and return with "Changes saved".
+8. In Supabase SQL editor, end the trial early to see the expired state:
+   `set hotelai.allow_trial_edit = on; update subscriptions set trial_started_at = now() - interval '8 days', trial_ends_at = now() - interval '1 day' where business_id = '<id>';`
+   → red banner, invitations blocked, data still visible.
+
 ## Project layout
 
 ```
@@ -70,6 +88,9 @@ src/
     onboarding/        wizard schemas, parsing, steps, data loading, RPC argument builders
     workspaces/        memberships, active workspace, switcher action, dashboard overview
     billing/           trial display helpers
+    entitlements/      entitlement snapshot, permissions, decisions, service
+    team/, agents/     invitation/role and agent-config schemas
+    email/             Resend sender and escaped templates
     supabase/          browser / server / proxy / admin clients
     env.ts             public env validation; env.server.ts for secrets
   proxy.ts             session refresh + coarse route protection

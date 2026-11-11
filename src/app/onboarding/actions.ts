@@ -1,6 +1,8 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { safeRedirectPath } from "@/lib/auth/redirect";
 import { getCurrentUser } from "@/lib/auth/session";
 import {
   companyFromFormData,
@@ -50,6 +52,19 @@ function dbErrorMessage(error: DbError, context: string): string {
   }
 }
 
+/**
+ * When a form is used from the business settings pages (returnTo set), go
+ * back there instead of to the next onboarding step. Only paths under
+ * /dashboard/business are accepted.
+ */
+function finish(returnTo: string | null): undefined {
+  if (!returnTo) return undefined;
+  const path = safeRedirectPath(returnTo, "/dashboard/business");
+  const target = path.startsWith("/dashboard/business") ? path.split("?")[0] : "/dashboard/business";
+  revalidatePath(target);
+  redirect(`${target}?saved=1`);
+}
+
 async function authenticated() {
   const user = await getCurrentUser();
   if (!user) redirect("/auth/login?next=/onboarding");
@@ -82,6 +97,7 @@ export async function createWorkspace(_prev: StepFormState, formData: FormData):
 // ---------------------------------------------------------------------------
 export async function updateCompany(
   businessId: string,
+  returnTo: string | null,
   _prev: StepFormState,
   formData: FormData,
 ): Promise<StepFormState> {
@@ -119,6 +135,7 @@ export async function updateCompany(
   if (error) return { status: "error", message: dbErrorMessage(error, "update company") };
   if (!data?.length) return { status: "error", message: dbErrorMessage({ code: "42501" }, "update company") };
 
+  finish(returnTo);
   redirect(stepPath(businessId, nextStep(current.industry, "company")));
 }
 
@@ -127,6 +144,7 @@ export async function updateCompany(
 // ---------------------------------------------------------------------------
 export async function saveOperations(
   businessId: string,
+  returnTo: string | null,
   _prev: StepFormState,
   formData: FormData,
 ): Promise<StepFormState> {
@@ -140,6 +158,7 @@ export async function saveOperations(
   const { error } = await supabase.rpc("save_onboarding_operations", operationsArgs(businessId, parsed.data));
   if (error) return { status: "error", message: dbErrorMessage(error, "save operations") };
 
+  finish(returnTo);
   const { data: business } = await supabase.from("businesses").select("industry").eq("id", businessId).single();
   redirect(stepPath(businessId, business ? nextStep(business.industry, "operations") : "review"));
 }
@@ -147,7 +166,12 @@ export async function saveOperations(
 // ---------------------------------------------------------------------------
 // Step 3: hotel details and rooms
 // ---------------------------------------------------------------------------
-export async function saveHotel(businessId: string, _prev: StepFormState, formData: FormData): Promise<StepFormState> {
+export async function saveHotel(
+  businessId: string,
+  returnTo: string | null,
+  _prev: StepFormState,
+  formData: FormData,
+): Promise<StepFormState> {
   await authenticated();
   if (!isUuid(businessId)) return { status: "error", message: "Unknown workspace." };
   const parsed = hotelSchema.safeParse(hotelFromFormData(formData));
@@ -157,6 +181,7 @@ export async function saveHotel(businessId: string, _prev: StepFormState, formDa
   const supabase = await createClient();
   const { error } = await supabase.rpc("save_onboarding_hotel", hotelArgs(businessId, parsed.data));
   if (error) return { status: "error", message: dbErrorMessage(error, "save hotel") };
+  finish(returnTo);
   redirect(stepPath(businessId, "review"));
 }
 
