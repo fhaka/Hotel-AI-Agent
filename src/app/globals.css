@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/*
+ * HotelAI design tokens. Components use these semantic names (bg-surface,
+ * text-muted, border-border, bg-brand...) rather than raw palette colours, so
+ * the visual identity can change in one place.
+ */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #eef5ff;
+  --color-brand-100: #d9e8ff;
+  --color-brand-200: #bcd7ff;
+  --color-brand-500: #2f6fed;
+  --color-brand-600: #1f57d6;
+  --color-brand-700: #1a46ad;
+  --color-brand-900: #142c63;
+
+  --color-ink: #0f172a;
+  --color-muted: #55627a;
+  --color-subtle: #8a94a8;
+  --color-border: #e3e8f0;
+  --color-surface: #ffffff;
+  --color-canvas: #f6f8fb;
+
+  --color-success-50: #ecfdf3;
+  --color-success-700: #067647;
+  --color-warning-50: #fffaeb;
+  --color-warning-700: #b54708;
+  --color-danger-50: #fef3f2;
+  --color-danger-600: #d92d20;
+  --color-danger-700: #b42318;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-canvas text-ink antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}
