@@ -259,6 +259,61 @@ export type Database = {
           },
         ];
       };
+      billing_checkout_sessions: {
+        Row: {
+          billing_interval: Database["public"]["Enums"]["billing_interval"];
+          business_id: string;
+          completed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          expires_at: string;
+          id: string;
+          plan_id: string;
+          provider: string;
+          provider_price_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          billing_interval: Database["public"]["Enums"]["billing_interval"];
+          business_id: string;
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          plan_id: string;
+          provider: string;
+          provider_price_id: string;
+        };
+        Update: {
+          billing_interval?: Database["public"]["Enums"]["billing_interval"];
+          business_id?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          plan_id?: string;
+          provider?: string;
+          provider_price_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "billing_checkout_sessions_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "billing_checkout_sessions_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       business_invitations: {
         Row: {
           accepted_at: string | null;
@@ -992,6 +1047,63 @@ export type Database = {
           },
         ];
       };
+      subscription_events: {
+        Row: {
+          billing_interval:
+            Database["public"]["Enums"]["billing_interval"] | null;
+          business_id: string;
+          created_at: string;
+          details: NonNullable<Json>;
+          event_type: string;
+          id: number;
+          occurred_at: string;
+          outcome: string;
+          plan_id: string | null;
+          provider: string;
+          provider_event_id: string;
+          status: Database["public"]["Enums"]["subscription_status"] | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          billing_interval?:
+            Database["public"]["Enums"]["billing_interval"] | null;
+          business_id: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          event_type: string;
+          id?: never;
+          occurred_at: string;
+          outcome: string;
+          plan_id?: string | null;
+          provider: string;
+          provider_event_id: string;
+          status?: Database["public"]["Enums"]["subscription_status"] | null;
+        };
+        Update: {
+          billing_interval?:
+            Database["public"]["Enums"]["billing_interval"] | null;
+          business_id?: string;
+          created_at?: string;
+          details?: NonNullable<Json>;
+          event_type?: string;
+          id?: never;
+          occurred_at?: string;
+          outcome?: string;
+          plan_id?: string | null;
+          provider?: string;
+          provider_event_id?: string;
+          status?: Database["public"]["Enums"]["subscription_status"] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       subscriptions: {
         Row: {
           billing_interval:
@@ -1006,6 +1118,7 @@ export type Database = {
           plan_id: string;
           provider_customer_id: string | null;
           provider_subscription_id: string | null;
+          provider_updated_at: string | null;
           status: Database["public"]["Enums"]["subscription_status"];
           trial_ends_at: string | null;
           trial_started_at: string | null;
@@ -1025,6 +1138,7 @@ export type Database = {
           plan_id: string;
           provider_customer_id?: string | null;
           provider_subscription_id?: string | null;
+          provider_updated_at?: string | null;
           status: Database["public"]["Enums"]["subscription_status"];
           trial_ends_at?: string | null;
           trial_started_at?: string | null;
@@ -1043,6 +1157,7 @@ export type Database = {
           plan_id?: string;
           provider_customer_id?: string | null;
           provider_subscription_id?: string | null;
+          provider_updated_at?: string | null;
           status?: Database["public"]["Enums"]["subscription_status"];
           trial_ends_at?: string | null;
           trial_started_at?: string | null;
@@ -1193,6 +1308,18 @@ export type Database = {
         Args: { p_token: string };
         Returns: string;
       };
+      apply_billing_event: {
+        Args: {
+          p_event_id: string;
+          p_event_type: string;
+          p_occurred_at: string;
+          p_payload: Json;
+          p_provider: string;
+          p_related_subscription_id: string;
+          p_subscription: Json;
+        };
+        Returns: Json;
+      };
       begin_agent_turn: {
         Args: {
           p_agent_id: string;
@@ -1255,6 +1382,16 @@ export type Database = {
           p_supported_languages?: string[];
           p_timezone?: string;
           p_website?: string;
+        };
+        Returns: string;
+      };
+      create_checkout_session: {
+        Args: {
+          p_business_id: string;
+          p_interval: Database["public"]["Enums"]["billing_interval"];
+          p_plan_id: string;
+          p_provider: string;
+          p_provider_price_id: string;
         };
         Returns: string;
       };

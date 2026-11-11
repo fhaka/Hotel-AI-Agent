@@ -1,6 +1,6 @@
 # HotelAI — Implementation Plan
 
-Living document. Updated at the end of every phase. Last update: **Phase 6 complete** (2026-11-16).
+Living document. Updated at the end of every phase. Last update: **Phase 7 complete (code)** (2026-11-17).
 
 ## Repository status at start
 
@@ -36,6 +36,7 @@ Recorded in [`docs/architecture/`](docs/architecture):
 - [0006 — Knowledge base and agent knowledge context](docs/architecture/0006-knowledge-base.md)
 - [0007 — AI agent runtime and playground](docs/architecture/0007-agent-runtime.md)
 - [0008 — Reservation engine and AI booking protocol](docs/architecture/0008-reservation-engine.md)
+- [0009 — Billing: provider abstraction, Paddle, verified webhooks](docs/architecture/0009-billing.md)
 
 ## Phases
 
@@ -177,12 +178,25 @@ without double-booking":** proven at the database level (117 DB tests, including
 quote/confirmation protocol and dry runs) and at the tool/guard level (unit tests with a scripted
 model). The live conversation with a real model still requires your OpenAI configuration.
 
-### Phase 7 — Billing ⬜ (schema 🟡)
+### Phase 7 — Billing and paid subscriptions ✅ (code) · ⚠ Paddle eligibility unverified
 
-- **First verify** Paddle merchant eligibility for your legal entity/country, payment methods and
-  payout options. Do not integrate before this is confirmed.
-- Billing-provider abstraction, checkout, signed webhook verification, idempotent processing
-  (`webhook_events` unique key already in place), subscription lifecycle, pricing page.
+| Item | Status |
+|---|---|
+| Public `/pricing` page from the `plans` table (monthly/annual) | ✅ |
+| Provider abstraction + Paddle adapter (official SDKs; API verified against SDK types/source) | ✅ |
+| Checkout via Paddle.js overlay with server-created checkout sessions (tamper-proof business binding) | ✅ |
+| Webhook: SDK signature verification (HMAC, replay window), wire-format parsing, idempotent and order-aware `apply_billing_event` | ✅ |
+| Lifecycle: activation, renewals (period updates), past_due/payment failures, pause, scheduled and effective cancellation, refunds recorded | ✅ |
+| Upgrades/downgrades (prorated), cancel at period end, Paddle customer portal (payment details, invoices) | ✅ |
+| Billing history (`subscription_events`); minimal stored payloads, no card data | ✅ |
+| Entitlements switch on paid status only after a verified event | ✅ |
+| **Paddle merchant eligibility for your entity/country** | ⚠ must be confirmed by you |
+| Live sandbox purchase | ⏳ needs Paddle sandbox keys + webhook URL (docs/setup/paddle.md) |
+
+**Acceptance criteria — "the customer can purchase a plan, and only a verified subscription event
+activates paid features":** the verified-only activation is proven by DB tests (129) and by unit
+tests that run the real Paddle SDK verifier against correctly signed, tampered, wrong-secret and
+replayed payloads. The purchase itself needs your Paddle sandbox account.
 
 ### Phase 8 — Automation ⬜
 Resend emails, reminders (trial expiry, bookings), daily reports, n8n integration, retries/monitoring.

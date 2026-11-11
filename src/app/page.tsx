@@ -1,5 +1,5 @@
-import { cacheLife } from "next/cache";
-import { Logo } from "@/components/logo";
+import { SiteFooter } from "@/components/marketing/site-footer";
+import { SiteHeader } from "@/components/marketing/site-header";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -58,19 +58,7 @@ const faqs = [
 export default function HomePage() {
   return (
     <div className="flex flex-1 flex-col bg-surface">
-      <header className="border-b border-border">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Logo />
-          <nav className="flex items-center gap-2">
-            <ButtonLink href="/auth/login" variant="ghost" size="sm">
-              Sign in
-            </ButtonLink>
-            <ButtonLink href="/auth/sign-up" size="sm">
-              Start free trial
-            </ButtonLink>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="flex-1">
         {/* Hero */}
@@ -90,8 +78,8 @@ export default function HomePage() {
               <ButtonLink href="/auth/sign-up" size="lg">
                 Start your 7-day free trial
               </ButtonLink>
-              <ButtonLink href="#how-it-works" variant="secondary" size="lg">
-                See how it works
+              <ButtonLink href="/pricing" variant="secondary" size="lg">
+                See pricing
               </ButtonLink>
             </div>
             <p className="mt-4 text-sm text-subtle">No payment card required.</p>
@@ -188,21 +176,8 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted sm:flex-row sm:px-6">
-          <Logo />
-          <p>
-            © <CopyrightYear /> HotelAI. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
 
-/** Prerendered and cached; revalidated daily so the year rolls over. */
-async function CopyrightYear() {
-  "use cache";
-  cacheLife("days");
-  return <>{new Date().getFullYear()}</>;
-}

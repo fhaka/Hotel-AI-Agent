@@ -4,7 +4,7 @@ Multi-tenant SaaS that gives hotels (and later other service businesses) AI rece
 reservation assistants, with self-service sign-up, private workspaces, a 7-day free trial and
 recurring subscriptions.
 
-> **Status:** Phases 1–6 complete (foundation, onboarding, dashboard & team, knowledge base, AI playground, reservation engine). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
+> **Status:** Phases 1–7 complete in code (foundation, onboarding, dashboard & team, knowledge base, AI playground, reservation engine, billing). Paddle eligibility and a live sandbox purchase are still to be done by the owner. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 > for what exists, what does not yet, and the roadmap.
 
 ## Quick start
@@ -117,6 +117,18 @@ npm run dev                  # http://localhost:3000
    Ask it to "confirm the booking now" in the same message as the quote. It should wait for your
    confirmation, because the database refuses otherwise.
 
+## How to verify Phase 7 manually
+
+1. `npx supabase db push`.
+2. Without Paddle keys, **Plan & usage** says online payment isn't set up, and `/pricing` shows the
+   plans from the database.
+3. Follow [docs/setup/paddle.md](docs/setup/paddle.md) with a **sandbox** account, then buy
+   *Growth* with a test card. The page first says *Payment is being confirmed*, then *Active*
+   once the webhook arrives.
+4. Switch plan (prorated) and cancel (access stays until period end). Open *Manage payment
+   details & invoices*.
+5. Send the webhook a request with a wrong signature. It returns 401 and nothing changes.
+
 ## Project layout
 
 ```
@@ -138,6 +150,7 @@ src/
     agents/runtime/    prompt, tools, tool loop, OpenAI adapter, turn service
     security/          same-origin (CSRF) check
     reservations/      status rules, dates, schemas, guest emails, notifier
+    billing/           price map, provider interface, Paddle adapter + normalizer, webhook handler
     supabase/          browser / server / proxy / admin clients
     env.ts             public env validation; env.server.ts for secrets
   proxy.ts             session refresh + coarse route protection
