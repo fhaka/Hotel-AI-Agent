@@ -28,8 +28,10 @@ export function NewReservation({
   const [search, searchDispatch, searching] = useActionState(searchAction, { status: "idle" });
   const { state: created, pending: creating, dispatch: createDispatch, onSubmit } = useStepAction(createAction);
   const [selected, setSelected] = useState<string | null>(null);
-  // One key per form instance: double clicks / retries can't book twice.
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  // One key per booking attempt, created in the browser when a room type is
+  // chosen (never during render, so server and client markup agree). Double
+  // clicks and retries reuse it, so they can't book twice.
+  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const option = search.options?.find((o) => o.roomTypeId === selected);
   const errors = created.fieldErrors ?? {};
 
@@ -64,7 +66,10 @@ export function NewReservation({
                       role="radio"
                       aria-checked={selected === o.roomTypeId}
                       disabled={soldOut}
-                      onClick={() => setSelected(o.roomTypeId)}
+                      onClick={() => {
+                        setSelected(o.roomTypeId);
+                        setIdempotencyKey((key) => key ?? crypto.randomUUID());
+                      }}
                       className={cn(
                         "w-full rounded-lg border p-4 text-left disabled:cursor-not-allowed disabled:opacity-50",
                         selected === o.roomTypeId ? "border-brand-600 bg-brand-50 ring-1 ring-brand-600" : "border-border hover:bg-canvas",
@@ -89,7 +94,7 @@ export function NewReservation({
         </Card>
       ) : null}
 
-      {option && search.stay ? (
+      {option && search.stay && idempotencyKey ? (
         <Card className="p-6">
           <h2 className="mb-4 text-base font-semibold">3. Guest details</h2>
           <form action={createDispatch} onSubmit={onSubmit} className="space-y-4" noValidate>
