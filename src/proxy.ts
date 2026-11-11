@@ -9,6 +9,6 @@ export const config = {
   matcher: [
     // Run on everything except static assets, image optimisation and the
     // favicon. Webhook routes are excluded: they authenticate by signature.
-    "/((?!_next/static|_next/image|favicon.ico|api/billing/webhook|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/billing/webhook|api/jobs|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

@@ -1,0 +1,32 @@
+{
+  "name": "HotelAI – scheduled jobs",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 10 }] }
+      },
+      "name": "Every 10 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.HOTELAI_URL }}/api/jobs/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 60000 }
+      },
+      "name": "Run HotelAI jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "notes": "Create a 'Header Auth' credential: name = Authorization, value = Bearer <CRON_SECRET>."
+    }
+  ],
+  "connections": {
+    "Every 10 minutes": { "main": [[{ "node": "Run HotelAI jobs", "type": "main", "index": 0 }]] }
+  },
+  "settings": {}
+}

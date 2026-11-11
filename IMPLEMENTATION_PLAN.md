@@ -1,6 +1,6 @@
 # HotelAI — Implementation Plan
 
-Living document. Updated at the end of every phase. Last update: **Phase 7 complete (code)** (2026-11-17).
+Living document. Updated at the end of every phase. Last update: **Phase 8 complete** (2026-11-18).
 
 ## Repository status at start
 
@@ -37,6 +37,7 @@ Recorded in [`docs/architecture/`](docs/architecture):
 - [0007 — AI agent runtime and playground](docs/architecture/0007-agent-runtime.md)
 - [0008 — Reservation engine and AI booking protocol](docs/architecture/0008-reservation-engine.md)
 - [0009 — Billing: provider abstraction, Paddle, verified webhooks](docs/architecture/0009-billing.md)
+- [0010 — Automation: notification outbox and scheduled jobs](docs/architecture/0010-automation.md)
 
 ## Phases
 
@@ -198,8 +199,25 @@ activates paid features":** the verified-only activation is proven by DB tests (
 tests that run the real Paddle SDK verifier against correctly signed, tampered, wrong-secret and
 replayed payloads. The purchase itself needs your Paddle sandbox account.
 
-### Phase 8 — Automation ⬜
-Resend emails, reminders (trial expiry, bookings), daily reports, n8n integration, retries/monitoring.
+### Phase 8 — Automation ✅
+
+| Item | Status |
+|---|---|
+| Notification outbox with unique dedupe keys (idempotent enqueueing) | ✅ |
+| Guest pre-arrival reminders (configurable days; needs access + automations feature) | ✅ |
+| Owner emails: welcome, trial ending, trial ended, payment failed (dunning), daily summary | ✅ |
+| Staff alerts for AI hand-overs + reminder when still unanswered; Conversations page to review and mark handled | ✅ |
+| Concurrency-safe worker (SKIP LOCKED), render-at-send with stale-data skips, Resend idempotency, exponential backoff, max attempts | ✅ |
+| Secured jobs endpoint (`CRON_SECRET`, constant-time) for Vercel Cron / n8n / cron; n8n workflow template | ✅ |
+| Monitoring: job run log, scheduler health banner, per-business delivery log | ✅ |
+| Trial expiry housekeeping and conversation retention run by the job | ✅ |
+| Automations settings page | ✅ |
+| Booking confirmation/cancellation emails | ✅ (since Phase 6) |
+
+**Acceptance criteria — "events generate the correct notifications and can recover from transient
+failures":** DB tests (142) cover every notification kind, its conditions and de-duplication,
+parallel claiming, backoff and give-up. Unit tests (189) cover the worker's outcome mapping,
+step isolation and render failures. Live delivery needs Resend keys and a scheduler.
 
 ### Phase 9 — Voice & channels ⬜
 Evaluate Twilio / Vapi / Retell; inbound calls via the same agent runtime; WhatsApp.

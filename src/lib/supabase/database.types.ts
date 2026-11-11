@@ -555,6 +555,97 @@ export type Database = {
           },
         ];
       };
+      job_runs: {
+        Row: {
+          error: string | null;
+          finished_at: string;
+          id: number;
+          job: string;
+          started_at: string;
+          stats: NonNullable<Json>;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          error?: string | null;
+          finished_at?: string;
+          id?: never;
+          job: string;
+          started_at: string;
+          stats?: NonNullable<Json>;
+          status: string;
+        };
+        Update: {
+          error?: string | null;
+          finished_at?: string;
+          id?: never;
+          job?: string;
+          started_at?: string;
+          stats?: NonNullable<Json>;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          attempts: number;
+          business_id: string;
+          created_at: string;
+          dedupe_key: string;
+          id: string;
+          kind: string;
+          last_error: string | null;
+          next_attempt_at: string;
+          provider_message_id: string | null;
+          recipient_email: string;
+          recipient_type: string;
+          sent_at: string | null;
+          status: string;
+          subject_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          business_id: string;
+          created_at?: string;
+          dedupe_key: string;
+          id?: string;
+          kind: string;
+          last_error?: string | null;
+          next_attempt_at?: string;
+          provider_message_id?: string | null;
+          recipient_email: string;
+          recipient_type: string;
+          sent_at?: string | null;
+          status?: string;
+          subject_id?: string | null;
+        };
+        Update: {
+          attempts?: number;
+          business_id?: string;
+          created_at?: string;
+          dedupe_key?: string;
+          id?: string;
+          kind?: string;
+          last_error?: string | null;
+          next_attempt_at?: string;
+          provider_message_id?: string | null;
+          recipient_email?: string;
+          recipient_type?: string;
+          sent_at?: string | null;
+          status?: string;
+          subject_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       plans: {
         Row: {
           annual_price_cents: number;
@@ -1320,6 +1411,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      automation_health: { Args: Record<PropertyKey, never>; Returns: Json };
       begin_agent_turn: {
         Args: {
           p_agent_id: string;
@@ -1335,6 +1427,31 @@ export type Database = {
         Args: { p_reason: string; p_reservation_id: string };
         Returns: Json;
       };
+      claim_notifications: {
+        Args: { p_limit: number };
+        Returns: {
+          attempts: number;
+          business_id: string;
+          created_at: string;
+          dedupe_key: string;
+          id: string;
+          kind: string;
+          last_error: string | null;
+          next_attempt_at: string;
+          provider_message_id: string | null;
+          recipient_email: string;
+          recipient_type: string;
+          sent_at: string | null;
+          status: string;
+          subject_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "notifications";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       complete_agent_turn: {
         Args: {
           p_agent_id: string;
@@ -1347,6 +1464,15 @@ export type Database = {
           p_tool_events: Json;
         };
         Returns: number;
+      };
+      complete_notification: {
+        Args: {
+          p_error: string;
+          p_id: string;
+          p_outcome: string;
+          p_provider_message_id: string;
+        };
+        Returns: string;
       };
       complete_onboarding: {
         Args: { p_business_id: string };
@@ -1434,6 +1560,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      enqueue_due_notifications: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
       escalate_conversation: {
         Args: {
           p_business_id: string;
@@ -1442,6 +1572,7 @@ export type Database = {
         };
         Returns: boolean;
       };
+      expire_trials: { Args: Record<PropertyKey, never>; Returns: number };
       fail_agent_turn: {
         Args: {
           p_business_id: string;
@@ -1481,6 +1612,16 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: number;
       };
+      record_job_run: {
+        Args: {
+          p_error: string;
+          p_job: string;
+          p_started_at: string;
+          p_stats: Json;
+          p_status: string;
+        };
+        Returns: undefined;
+      };
       remove_business_member: {
         Args: { p_business_id: string; p_user_id: string };
         Returns: undefined;
@@ -1494,6 +1635,10 @@ export type Database = {
           p_reference: string;
         };
         Returns: Json;
+      };
+      resolve_conversation: {
+        Args: { p_conversation_id: string };
+        Returns: undefined;
       };
       revoke_business_invitation: {
         Args: { p_invitation_id: string };

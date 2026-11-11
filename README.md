@@ -4,7 +4,7 @@ Multi-tenant SaaS that gives hotels (and later other service businesses) AI rece
 reservation assistants, with self-service sign-up, private workspaces, a 7-day free trial and
 recurring subscriptions.
 
-> **Status:** Phases 1–7 complete in code (foundation, onboarding, dashboard & team, knowledge base, AI playground, reservation engine, billing). Paddle eligibility and a live sandbox purchase are still to be done by the owner. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
+> **Status:** Phases 1–8 complete in code (foundation, onboarding, dashboard & team, knowledge base, AI playground, reservation engine, billing, automation). Paddle eligibility and a live sandbox purchase are still to be done by the owner. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 > for what exists, what does not yet, and the roadmap.
 
 ## Quick start
@@ -129,6 +129,22 @@ npm run dev                  # http://localhost:3000
    details & invoices*.
 5. Send the webhook a request with a wrong signature. It returns 401 and nothing changes.
 
+## How to verify Phase 8 manually
+
+1. `npx supabase db push`. Set `CRON_SECRET` (`openssl rand -hex 32`) and the Resend variables
+   in `.env.local`.
+2. Trigger a run (normally done by a scheduler, see docs/setup/automation.md):
+   ```bash
+   curl -X POST http://localhost:3000/api/jobs/run -H "Authorization: Bearer $CRON_SECRET"
+   ```
+   The response lists what was queued and sent. A new workspace gets its welcome email.
+3. Create a reservation for check-in in 2 days with your email as the guest. The next run sends
+   the pre-arrival reminder, and a second run sends nothing more.
+4. In the playground, ask for a human and give your contact details. Live-channel hand-overs (not
+   playground tests) are emailed to staff. Open **Conversations** to review one and click *Mark
+   as handled*.
+5. **Automations** shows the scheduler health, your settings and the delivery log.
+
 ## Project layout
 
 ```
@@ -151,6 +167,7 @@ src/
     security/          same-origin (CSRF) check
     reservations/      status rules, dates, schemas, guest emails, notifier
     billing/           price map, provider interface, Paddle adapter + normalizer, webhook handler
+    automation/        notification preferences, templates, renderer, scheduled-job worker
     supabase/          browser / server / proxy / admin clients
     env.ts             public env validation; env.server.ts for secrets
   proxy.ts             session refresh + coarse route protection
@@ -162,6 +179,7 @@ tests/
   unit/                Vitest unit tests
   db/                  Vitest database/RLS tests
 docs/architecture/     architecture decision records
+automation/n8n/        n8n workflow template that triggers the scheduled jobs
 ```
 
 ## Security principles
