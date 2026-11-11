@@ -28,4 +28,6 @@ jobs:
       # RLS / constraint tests against a throwaway PostgreSQL cluster
       # (ubuntu-latest ships PostgreSQL server binaries).
       - run: npm run test:db
+      # Generated database types must match the migrations.
+      - run: npm run db:types && git diff --exit-code src/lib/supabase/database.types.ts
       - run: npm run build

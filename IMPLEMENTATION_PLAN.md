@@ -1,6 +1,6 @@
 # HotelAI — Implementation Plan
 
-Living document. Updated at the end of every phase. Last update: **Phase 1 complete** (2026-11-11).
+Living document. Updated at the end of every phase. Last update: **Phase 2 complete** (2026-11-12).
 
 ## Repository status at start
 
@@ -31,6 +31,7 @@ Recorded in [`docs/architecture/`](docs/architecture):
 - [0001 — Technology stack](docs/architecture/0001-technology-stack.md)
 - [0002 — Multi-tenancy and Row Level Security](docs/architecture/0002-multi-tenancy-and-rls.md)
 - [0003 — Trials, subscriptions and entitlements](docs/architecture/0003-trials-and-entitlements.md)
+- [0004 — Onboarding wizard and active workspace](docs/architecture/0004-onboarding-and-active-workspace.md)
 
 ## Phases
 
@@ -62,19 +63,33 @@ against a live Supabase Auth server** — the sandbox this was built in could no
 Supabase Auth container image (network policy). See "How to verify Phase 1" in the README; this
 needs a 10-minute manual check with your Supabase project.
 
-### Phase 2 — Business onboarding ⬜ (DB groundwork 🟡)
+### Phase 2 — Business onboarding ✅
 
-- Multi-step onboarding wizard at `/onboarding` (company → operations → hotel details), saving progress.
-- Server action calling `public.create_business_workspace()` (already implemented and tested).
-- Hotel-specific details stored in `business_settings` / `agent_knowledge` / `room_types`.
-- Active-workspace selection (cookie holding a business id, **always re-validated** against
-  membership on the server) and a business switcher.
-- Generated database types (`supabase gen types typescript`) replacing hand-written row types.
-- Welcome email (requires Resend; Phase 8 infrastructure may be pulled forward).
+| Item | Status |
+|---|---|
+| Multi-step wizard: company → operations → hotel & rooms (hotels only) → review | ✅ |
+| Workspace + owner + settings + 7-day trial + default agents created atomically at step 1 | ✅ |
+| Progress saved per step, resumable (`/onboarding/:id`), every step editable later | ✅ |
+| Opening hours, policies, contact instructions, services, FAQs | ✅ |
+| Hotel: check-in/out, currency, cancellation/breakfast/parking/Wi-Fi/pets/extras, room types with capacity, beds, amenities, price, room numbers (ranges like `101-110`) | ✅ |
+| One transaction per step; owner/admin enforced in the database; progress not client-writable | ✅ |
+| Server + database validation with field-level error messages; form input kept on errors | ✅ |
+| Multi-workspace support: active workspace (cookie re-validated) and business switcher | ✅ |
+| Dashboard shows the active workspace's real plan, trial countdown (business time zone), agents, knowledge and room counts | ✅ |
+| Generated database types (`npm run db:types`) + CI drift check | ✅ |
+| Seasonal pricing | ⏭ moved to Phase 6 (Rooms page) to keep onboarding short |
+| Welcome email | ⏭ moved to Phase 8 (needs Resend + email infrastructure) |
+
+**Acceptance criteria — "a new user can create a business workspace; the workspace, owner
+membership, trial and default agents are stored correctly":** verified at the database level
+(55 DB tests) including a contract test that sends real form data through the same validation and
+argument builders as the Server Actions into the real SQL functions. **Not yet verified by clicking
+through the UI against a live Supabase project** (see "Known gaps").
 
 ### Phase 3 — SaaS dashboard ⬜
 
 - Sidebar navigation, business switcher, dashboard overview with real data and empty states.
+- Sidebar navigation for the workspace area (switcher already exists in the header).
 - Server-side entitlement service `getBusinessEntitlements(businessId, userId)`.
 - Trial countdown (displayed in the business time zone), usage display, upgrade screens.
 - Team management UI using `update_member_role` / `remove_business_member`; invitations flow.
@@ -118,12 +133,14 @@ notice, terms, DPA, retention, call-recording consent), deployment.
 
 ## Known gaps and risks (honest list)
 
-1. **End-to-end auth not yet run against live Supabase Auth** (see above).
+1. **No browser end-to-end run against a live Supabase stack yet.** The build sandbox could not run
+   Supabase Auth/PostgREST (container images blocked by network policy; downloading release
+   binaries was not permitted). All flows are covered by unit, render, database and contract
+   tests, but the click-through must be checked manually (README) or in CI with a Supabase stack.
 2. Trial abuse via *new email addresses* is not prevented (one trial per user account only). Stronger
    signals (verified phone, payment-method fingerprint, domain heuristics) can be added later.
 3. Supabase Auth email sending uses Supabase's built-in SMTP by default, which is heavily
    rate-limited — configure custom SMTP (e.g. Resend) before real users sign up.
 4. No Content Security Policy yet (baseline security headers are set).
-5. Database row types are hand-written for the few queries that exist; generate types in Phase 2.
-6. `/admin` is protected by login but has no pages yet; platform-admin authorization uses
+5. `/admin` is protected by login but has no pages yet; platform-admin authorization uses
    `public.platform_admins`, writable only with the service role.

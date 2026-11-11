@@ -4,7 +4,7 @@ Multi-tenant SaaS that gives hotels (and later other service businesses) AI rece
 reservation assistants, with self-service sign-up, private workspaces, a 7-day free trial and
 recurring subscriptions.
 
-> **Status:** Phase 1 (foundation) complete. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
+> **Status:** Phases 1 (foundation) and 2 (business onboarding) complete. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 > for what exists, what does not yet, and the roadmap.
 
 ## Quick start
@@ -28,6 +28,7 @@ npm run dev                  # http://localhost:3000
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript, no emit |
 | `npm test` | Unit tests (no network, no database) |
+| `npm run db:types` | Regenerates `src/lib/supabase/database.types.ts` from the migrations (run after adding a migration) |
 | `npm run test:db` | Database security tests: spins up a throwaway PostgreSQL 15+ cluster, applies all migrations, tests RLS, roles, trials and double-booking. Needs PostgreSQL server binaries installed locally (or set `DATABASE_URL_TEST` to an empty disposable database). |
 
 ## How to verify Phase 1 manually
@@ -40,6 +41,21 @@ npm run dev                  # http://localhost:3000
 5. **Sign out** → redirected to `/auth/login`; visiting `/dashboard` now redirects to login.
 6. **Forgot password** → email → link opens `/auth/reset-password` → set a new password → dashboard.
 
+## How to verify Phase 2 manually
+
+1. Sign in with a verified account → dashboard → **Set up workspace**.
+2. Step 1: enter company details, choose *Hotel or guesthouse* → **Create workspace & continue**.
+   In Supabase (Table editor) you should now see the business, an `owner` row in
+   `business_members`, a `trialing` subscription ending in 7 days, and 3 agents.
+3. Step 2: set hours, add a service and an FAQ. Submit with an FAQ answer left blank first — the
+   error appears and nothing you typed is lost.
+4. Step 3: add room types with room numbers like `101-104`. Try the same number in two types to
+   see the validation.
+5. Review → **Finish setup** → dashboard shows plan, days left (in your business time zone), agents,
+   knowledge and room counts.
+6. Create a second workspace from the switcher in the header → it shows *No free trial is
+   available* (one trial per account). Switch between the two workspaces.
+
 ## Project layout
 
 ```
@@ -47,10 +63,13 @@ src/
   app/                 routes (App Router)
     auth/              sign-up, login, callback, forgot/reset password, server actions
     dashboard/         protected workspace area
-    onboarding/        protected; wizard arrives in Phase 2
+    onboarding/        protected multi-step setup wizard (+ [businessId]/<step>)
   components/          shared UI (ui/, auth/, app/)
   lib/
     auth/              session DAL, redirect safety, validation schemas
+    onboarding/        wizard schemas, parsing, steps, data loading, RPC argument builders
+    workspaces/        memberships, active workspace, switcher action, dashboard overview
+    billing/           trial display helpers
     supabase/          browser / server / proxy / admin clients
     env.ts             public env validation; env.server.ts for secrets
   proxy.ts             session refresh + coarse route protection

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run --project unit",
     "test:db": "bash scripts/test-db.sh",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:types": "bash scripts/gen-types.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -29,6 +30,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "pg": "^8.23.1",
+    "prettier": "^3.10.0",
+    "supabase": "^3.1.0",
     "tailwindcss": "4.3.3",
     "typescript": "^5",
     "vitest": "^5.1.0"
