@@ -18,6 +18,8 @@ export type Database = {
           channel: Database["public"]["Enums"]["conversation_channel"];
           created_at: string;
           customer_id: string | null;
+          escalated_at: string | null;
+          escalation: Json | null;
           id: string;
           started_by: string | null;
           status: Database["public"]["Enums"]["conversation_status"];
@@ -30,6 +32,8 @@ export type Database = {
           channel: Database["public"]["Enums"]["conversation_channel"];
           created_at?: string;
           customer_id?: string | null;
+          escalated_at?: string | null;
+          escalation?: Json | null;
           id?: string;
           started_by?: string | null;
           status?: Database["public"]["Enums"]["conversation_status"];
@@ -41,6 +45,8 @@ export type Database = {
           channel?: Database["public"]["Enums"]["conversation_channel"];
           created_at?: string;
           customer_id?: string | null;
+          escalated_at?: string | null;
+          escalation?: Json | null;
           id?: string;
           started_by?: string | null;
           status?: Database["public"]["Enums"]["conversation_status"];
@@ -606,6 +612,25 @@ export type Database = {
         };
         Relationships: [];
       };
+      rate_limits: {
+        Row: {
+          count: number;
+          key: string;
+          window_start: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          count: number;
+          key: string;
+          window_start: string;
+        };
+        Update: {
+          count?: number;
+          key?: string;
+          window_start?: string;
+        };
+        Relationships: [];
+      };
       reservations: {
         Row: {
           business_id: string;
@@ -1035,9 +1060,37 @@ export type Database = {
         Args: { p_token: string };
         Returns: string;
       };
+      begin_agent_turn: {
+        Args: {
+          p_agent_id: string;
+          p_business_id: string;
+          p_channel: Database["public"]["Enums"]["conversation_channel"];
+          p_conversation_id: string;
+          p_customer_message: string;
+          p_started_by: string;
+        };
+        Returns: Json;
+      };
+      complete_agent_turn: {
+        Args: {
+          p_agent_id: string;
+          p_business_id: string;
+          p_conversation_id: string;
+          p_input_tokens: number;
+          p_model: string;
+          p_output_tokens: number;
+          p_reply: string;
+          p_tool_events: Json;
+        };
+        Returns: number;
+      };
       complete_onboarding: {
         Args: { p_business_id: string };
         Returns: undefined;
+      };
+      consume_rate_limit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number };
+        Returns: boolean;
       };
       create_business_invitation: {
         Args: {
@@ -1068,6 +1121,23 @@ export type Database = {
         };
         Returns: string;
       };
+      escalate_conversation: {
+        Args: {
+          p_business_id: string;
+          p_conversation_id: string;
+          p_details: Json;
+        };
+        Returns: boolean;
+      };
+      fail_agent_turn: {
+        Args: {
+          p_business_id: string;
+          p_conversation_id: string;
+          p_error_code: string;
+          p_usage_event_id: number;
+        };
+        Returns: undefined;
+      };
       get_business_entitlements: {
         Args: { p_business_id: string };
         Returns: Json;
@@ -1077,6 +1147,10 @@ export type Database = {
         Returns: Json;
       };
       get_invitation_preview: { Args: { p_token: string }; Returns: Json };
+      purge_expired_conversations: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
       remove_business_member: {
         Args: { p_business_id: string; p_user_id: string };
         Returns: undefined;

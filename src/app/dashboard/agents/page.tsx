@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AGENT_STATUS_LABEL, AGENT_TYPE_INFO } from "@/lib/agents/config";
 import { createClient } from "@/lib/supabase/server";
@@ -21,7 +22,10 @@ export default async function AgentsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">AI agents</h1>
-        <p className="mt-1 text-sm text-muted">Configure how each agent behaves. Testing in the playground arrives in a later release.</p>
+        <p className="mt-1 text-sm text-muted">Configure how each agent behaves, then test it in the playground.</p>
+      </div>
+      <div>
+        <ButtonLink href="/dashboard/agents/playground">Open playground</ButtonLink>
       </div>
       <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {(agents ?? []).map((a) => {

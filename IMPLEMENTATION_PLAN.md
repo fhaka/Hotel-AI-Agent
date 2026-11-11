@@ -1,6 +1,6 @@
 # HotelAI — Implementation Plan
 
-Living document. Updated at the end of every phase. Last update: **Phase 4 complete** (2026-11-14).
+Living document. Updated at the end of every phase. Last update: **Phase 5 complete** (2026-11-15).
 
 ## Repository status at start
 
@@ -34,6 +34,7 @@ Recorded in [`docs/architecture/`](docs/architecture):
 - [0004 — Onboarding wizard and active workspace](docs/architecture/0004-onboarding-and-active-workspace.md)
 - [0005 — Entitlement service and team invitations](docs/architecture/0005-entitlements-and-team.md)
 - [0006 — Knowledge base and agent knowledge context](docs/architecture/0006-knowledge-base.md)
+- [0007 — AI agent runtime and playground](docs/architecture/0007-agent-runtime.md)
 
 ## Phases
 
@@ -128,15 +129,28 @@ canceled before/after period end, incomplete). UI click-through against live Sup
 workspace":** covered by DB tests (RLS on CRUD and search, cross-tenant search and context
 loading return nothing) and unit tests (context builder).
 
-### Phase 5 — AI playground ⬜
+### Phase 5 — AI playground ✅
 
-- Agent runtime must call `checkAgentExecution()` (already implemented) before every model call.
-- Use `loadKnowledgeSources()` + `formatKnowledgeContext()` (already implemented) for business knowledge; the system prompt must declare the `<business_knowledge>` block as data, not instructions.
+| Item | Status |
+|---|---|
+| OpenAI Responses API integration (official SDK; stateless, strict function tools, hashed safety identifier, timeouts/retries, error mapping) | ✅ (verified against SDK types; first live call needs your key) |
+| Shared agent runtime: entitlements → rate limits → atomic `begin_agent_turn` → knowledge + prompt → tool loop → `complete_agent_turn` / `fail_agent_turn` | ✅ |
+| Website receptionist (and reservation assistant without booking tools, which says so honestly) | ✅ |
+| Function calling: `search_knowledge`, `request_human_handoff` (Zod-validated, no tenant ids in arguments) | ✅ |
+| Conversation and message storage, escalation, retention function | ✅ |
+| Usage tracking (messages reserved atomically, tokens recorded, failed turns refunded) | ✅ |
+| Trial/plan/usage entitlement checks before every model call (two layers) | ✅ |
+| Rate limiting per user and per business | ✅ |
+| Prompt-injection defences: fixed rules, delimited data, sanitized preferences/knowledge, canary leak guard, output caps | ✅ |
+| `/dashboard/agents/playground`: agent selector, chat, history, new conversation, test-mode status, knowledge summary, usage, errors | ✅ |
+| `/api/agent/chat` with same-origin + JSON + size checks | ✅ |
+| Streaming responses | ⏭ later (not required for correctness) |
+| `/dashboard/conversations` (all channels, for staff) | ⏭ with live channels (Phase 8/9) |
 
-- OpenAI Responses API integration (model from `OPENAI_MODEL`; verify current docs first).
-- Shared agent runtime: entitlement check → load business config/knowledge → tool calling with Zod
-  validation → persist conversation → record usage.
-- `/dashboard/agents/playground`, `/api/agent/chat`, rate limiting.
+**Acceptance criteria — "a hotel owner can test an actual AI receptionist that responds using that
+hotel's saved information":** implemented end-to-end in code and covered piecewise by tests.
+**Not yet observed with a real model**: needs `OPENAI_API_KEY`, `OPENAI_MODEL` and
+`SUPABASE_SECRET_KEY` on a running deployment.
 
 ### Phase 6 — Hotel reservation engine ⬜ (schema 🟡)
 
@@ -164,7 +178,7 @@ notice, terms, DPA, retention, call-recording consent), deployment.
 
 ## Known gaps and risks (honest list)
 
-1. **No browser end-to-end run against a live Supabase stack yet.** The build sandbox could not run
+1. **No live run against Supabase or OpenAI yet.** The build sandbox could not run
    Supabase Auth/PostgREST (container images blocked by network policy; downloading release
    binaries was not permitted). All flows are covered by unit, render, database and contract
    tests, but the click-through must be checked manually (README) or in CI with a Supabase stack.

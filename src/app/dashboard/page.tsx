@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Dashboard" };
 
 const NOTICES: Record<string, string> = {
   "password-updated": "Your password has been updated.",
-  "onboarding-complete": "Your workspace is set up. Next, you'll be able to test your agents in the playground.",
+  "onboarding-complete": "Your workspace is set up. Next, test your agents in the playground.",
   "joined-workspace": "Welcome! You've joined the workspace.",
   "left-workspace": "You left the workspace.",
 };
@@ -137,7 +137,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-subtle">The agent playground arrives in a later phase.</p>
+          <Link href="/dashboard/agents/playground" className="mt-3 inline-block text-sm font-medium text-brand-600 hover:text-brand-700">
+            Test agents in the playground →
+          </Link>
         </Card>
       </div>
 
