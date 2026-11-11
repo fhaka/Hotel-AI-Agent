@@ -215,6 +215,13 @@ describe("instructions", () => {
     expect(buildInstructions({ ...input, agentType: "reservation_assistant" })).toContain("PLAYGROUND: bookings here are test runs");
   });
 
+  it("adapts the reply style to the channel", () => {
+    expect(buildInstructions({ ...input, channel: "voice" })).toContain("PHONE CALL");
+    expect(buildInstructions({ ...input, channel: "voice" })).toContain("read them back and ask the caller to confirm");
+    expect(buildInstructions({ ...input, channel: "whatsapp" })).toContain("WhatsApp chat");
+    expect(buildInstructions({ ...input, channel: "website" })).toContain("Live website conversation");
+  });
+
   it("adds the administrative-only rule for clinics", () => {
     expect(buildInstructions({ ...input, industry: "clinic" })).toContain("Never give medical advice");
     expect(buildInstructions(input)).not.toContain("medical advice");

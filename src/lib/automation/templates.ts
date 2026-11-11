@@ -157,3 +157,37 @@ export function welcomeEmail(d: { businessName: string; dashboardUrl: string }):
     text: [`Welcome to HotelAI, ${d.businessName}. Your 7-day free trial has started.`, "", ...steps.map((s, i) => `${i + 1}. ${s}`), "", d.dashboardUrl].join("\n"),
   };
 }
+
+export function callSummaryEmail(d: {
+  businessName: string;
+  startedAt: string;
+  turns: { who: "Caller" | "Assistant"; text: string }[];
+  escalationReason: string | null;
+  bookingNote: string | null;
+  conversationUrl: string;
+}): RenderedEmail {
+  const lines = d.turns.slice(0, 30);
+  const html = layout(
+    "Phone call summary",
+    `<p style="line-height:1.6">Call answered by your AI phone assistant on ${escapeHtml(d.startedAt)}.</p>
+${d.escalationReason ? `<p style="background:#fffaeb;padding:10px;border-radius:8px"><strong>Needs follow-up:</strong> ${escapeHtml(d.escalationReason)}</p>` : ""}
+${d.bookingNote ? `<p><strong>${escapeHtml(d.bookingNote)}</strong></p>` : ""}
+<table role="presentation" cellpadding="4" cellspacing="0" style="font-size:13px">${lines
+      .map((t) => `<tr><td style="color:#55627a;vertical-align:top;white-space:nowrap">${t.who}</td><td>${escapeHtml(t.text)}</td></tr>`)
+      .join("")}</table>
+${button("Open transcript", d.conversationUrl)}`,
+    d.businessName,
+  );
+  const text = [
+    `Phone call summary — ${d.businessName} (${d.startedAt})`,
+    d.escalationReason ? `Needs follow-up: ${d.escalationReason}` : "",
+    d.bookingNote ?? "",
+    "",
+    ...lines.map((t) => `${t.who}: ${t.text}`),
+    "",
+    d.conversationUrl,
+  ]
+    .filter((l, i, a) => l !== "" || a[i - 1] !== "")
+    .join("\n");
+  return { subject: `${d.escalationReason ? "Follow-up needed: " : ""}Phone call summary — ${d.businessName}`, html, text };
+}

@@ -4,7 +4,7 @@ Multi-tenant SaaS that gives hotels (and later other service businesses) AI rece
 reservation assistants, with self-service sign-up, private workspaces, a 7-day free trial and
 recurring subscriptions.
 
-> **Status:** Phases 1–8 complete in code (foundation, onboarding, dashboard & team, knowledge base, AI playground, reservation engine, billing, automation). Paddle eligibility and a live sandbox purchase are still to be done by the owner. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
+> **Status:** Phases 1–9 complete in code (foundation, onboarding, dashboard & team, knowledge base, AI playground, reservation engine, billing, automation, channels). Paddle eligibility and a live sandbox purchase are still to be done by the owner. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 > for what exists, what does not yet, and the roadmap.
 
 ## Quick start
@@ -145,6 +145,15 @@ npm run dev                  # http://localhost:3000
    as handled*.
 5. **Automations** shows the scheduler health, your settings and the delivery log.
 
+## How to verify Phase 9 manually
+
+1. `npx supabase db push` (two new migrations).
+2. **Channels → Website chat**: enable it, add `http://localhost:3000`, and copy the embed code
+   into a test HTML page served from that origin. The bubble opens the chat; conversations show
+   up under **Conversations**; bookings are real and marked as AI bookings.
+3. Phone and WhatsApp: follow [docs/setup/channels.md](docs/setup/channels.md). This needs a
+   Twilio account, a public HTTPS URL (deployment or tunnel) and `TWILIO_AUTH_TOKEN`.
+
 ## Project layout
 
 ```
@@ -168,6 +177,7 @@ src/
     reservations/      status rules, dates, schemas, guest emails, notifier
     billing/           price map, provider interface, Paddle adapter + normalizer, webhook handler
     automation/        notification preferences, templates, renderer, scheduled-job worker
+    channels/          widget, Twilio verification/TwiML, channel config and routing
     supabase/          browser / server / proxy / admin clients
     env.ts             public env validation; env.server.ts for secrets
   proxy.ts             session refresh + coarse route protection

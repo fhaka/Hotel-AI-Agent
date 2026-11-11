@@ -42,7 +42,7 @@ export async function getWorkspaceOverview(workspace: WorkspaceSummary, today?: 
         .from("reservations")
         .select("id", { count: "exact", head: true })
         .eq("business_id", id)
-        .in("source", ["ai_website", "ai_voice"])
+        .in("source", ["ai_website", "ai_voice", "ai_whatsapp"])
         .gte("created_at", new Date(Date.parse(`${today}T00:00:00Z`) - 30 * 86_400_000).toISOString()),
       supabase.from("rooms").select("id", { count: "exact", head: true }).eq("business_id", id).eq("status", "available"),
     ]);

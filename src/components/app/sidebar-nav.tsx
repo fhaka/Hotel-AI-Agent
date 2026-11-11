@@ -15,6 +15,7 @@ const NAV: Item[] = [
   { href: "/dashboard/conversations", label: "Conversations" },
   { href: "/dashboard/agents", label: "AI agents" },
   { href: "/dashboard/knowledge", label: "Knowledge base" },
+  { href: "/dashboard/channels", label: "Channels" },
   { href: "/dashboard/automations", label: "Automations" },
   { href: "/dashboard/business", label: "Business" },
   { href: "/dashboard/team", label: "Team" },

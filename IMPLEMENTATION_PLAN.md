@@ -1,6 +1,6 @@
 # HotelAI — Implementation Plan
 
-Living document. Updated at the end of every phase. Last update: **Phase 8 complete** (2026-11-18).
+Living document. Updated at the end of every phase. Last update: **Phase 9 complete (code)** (2026-11-19).
 
 ## Repository status at start
 
@@ -38,6 +38,7 @@ Recorded in [`docs/architecture/`](docs/architecture):
 - [0008 — Reservation engine and AI booking protocol](docs/architecture/0008-reservation-engine.md)
 - [0009 — Billing: provider abstraction, Paddle, verified webhooks](docs/architecture/0009-billing.md)
 - [0010 — Automation: notification outbox and scheduled jobs](docs/architecture/0010-automation.md)
+- [0011 — Customer channels: website widget, phone, WhatsApp](docs/architecture/0011-channels.md)
 
 ## Phases
 
@@ -219,8 +220,25 @@ failures":** DB tests (142) cover every notification kind, its conditions and de
 parallel claiming, backoff and give-up. Unit tests (189) cover the worker's outcome mapping,
 step isolation and render failures. Live delivery needs Resend keys and a scheduler.
 
-### Phase 9 — Voice & channels ⬜
-Evaluate Twilio / Vapi / Retell; inbound calls via the same agent runtime; WhatsApp.
+### Phase 9 — Voice and other channels ✅ (code) · live calls/messages untested
+
+| Item | Status |
+|---|---|
+| Shared turn core for all channels (playground keeps dry-run bookings; live channels book for real) | ✅ |
+| Website chat widget: embed script, iframe chat, CSP frame-ancestors from allowed origins, visitor tokens, rate limits, AI disclosure | ✅ |
+| Voice provider: Twilio (decision + rationale in ADR 0011), API verified against SDK types | ✅ |
+| Phone number configuration: operator-only assignment, owner settings (language, transfer number, on/off) | ✅ |
+| Inbound calls: signed webhooks, speech turns through the runtime, AI disclosure, transfer to staff, voice-minute limits | ✅ |
+| WhatsApp via Twilio: signed webhook, hashed sender references, reservation assistant | ✅ |
+| Call summaries emailed to staff (outbox), call minutes recorded once | ✅ |
+| Human hand-off on all channels | ✅ |
+| Albanian/Croatian/Slovenian speech output | ⏭ needs external TTS |
+| Real phone call / WhatsApp message | ⏳ needs Twilio account + public HTTPS URL |
+
+**Acceptance criteria — "real calls or messages can use the same authorized AI agent runtime":**
+implemented through the shared `executeTurn()`. Tested: Twilio signature checks with the real
+SDK, TwiML injection, routing and conversation binding in SQL (150 DB tests), and the widget
+security headers on a running server. A real call has not been placed.
 
 ### Phase 10 — Production launch ⬜
 Nonce-based CSP, security review, error monitoring, backups, performance, legal review (privacy

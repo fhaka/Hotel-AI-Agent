@@ -20,6 +20,7 @@ export type Database = {
           customer_id: string | null;
           escalated_at: string | null;
           escalation: Json | null;
+          external_ref: string | null;
           id: string;
           started_by: string | null;
           status: Database["public"]["Enums"]["conversation_status"];
@@ -34,6 +35,7 @@ export type Database = {
           customer_id?: string | null;
           escalated_at?: string | null;
           escalation?: Json | null;
+          external_ref?: string | null;
           id?: string;
           started_by?: string | null;
           status?: Database["public"]["Enums"]["conversation_status"];
@@ -47,6 +49,7 @@ export type Database = {
           customer_id?: string | null;
           escalated_at?: string | null;
           escalation?: Json | null;
+          external_ref?: string | null;
           id?: string;
           started_by?: string | null;
           status?: Database["public"]["Enums"]["conversation_status"];
@@ -310,6 +313,51 @@ export type Database = {
             columns: ["plan_id"];
             isOneToOne: false;
             referencedRelation: "plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      business_channels: {
+        Row: {
+          address: string | null;
+          business_id: string;
+          config: NonNullable<Json>;
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          kind: Database["public"]["Enums"]["channel_kind"];
+          public_key: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          address?: string | null;
+          business_id: string;
+          config?: NonNullable<Json>;
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          kind: Database["public"]["Enums"]["channel_kind"];
+          public_key?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          address?: string | null;
+          business_id?: string;
+          config?: NonNullable<Json>;
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          kind?: Database["public"]["Enums"]["channel_kind"];
+          public_key?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "business_channels_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
             referencedColumns: ["id"];
           },
         ];
@@ -1411,6 +1459,30 @@ export type Database = {
         };
         Returns: Json;
       };
+      assign_channel_address: {
+        Args: {
+          p_address: string;
+          p_business_id: string;
+          p_kind: Database["public"]["Enums"]["channel_kind"];
+        };
+        Returns: {
+          address: string | null;
+          business_id: string;
+          config: NonNullable<Json>;
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          kind: Database["public"]["Enums"]["channel_kind"];
+          public_key: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "business_channels";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       automation_health: { Args: Record<PropertyKey, never>; Returns: Json };
       begin_agent_turn: {
         Args: {
@@ -1419,6 +1491,7 @@ export type Database = {
           p_channel: Database["public"]["Enums"]["conversation_channel"];
           p_conversation_id: string;
           p_customer_message: string;
+          p_external_ref?: string;
           p_started_by: string;
         };
         Returns: Json;
@@ -1477,6 +1550,31 @@ export type Database = {
       complete_onboarding: {
         Args: { p_business_id: string };
         Returns: undefined;
+      };
+      configure_channel: {
+        Args: {
+          p_business_id: string;
+          p_config: Json;
+          p_enabled: boolean;
+          p_kind: Database["public"]["Enums"]["channel_kind"];
+        };
+        Returns: {
+          address: string | null;
+          business_id: string;
+          config: NonNullable<Json>;
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          kind: Database["public"]["Enums"]["channel_kind"];
+          public_key: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "business_channels";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       consume_rate_limit: {
         Args: { p_key: string; p_limit: number; p_window_seconds: number };
@@ -1622,6 +1720,20 @@ export type Database = {
         };
         Returns: undefined;
       };
+      record_voice_call: {
+        Args: {
+          p_agent_id: string;
+          p_business_id: string;
+          p_call_sid: string;
+          p_conversation_id: string;
+          p_duration_seconds: number;
+        };
+        Returns: Json;
+      };
+      regenerate_widget_key: {
+        Args: { p_business_id: string };
+        Returns: string;
+      };
       remove_business_member: {
         Args: { p_business_id: string; p_user_id: string };
         Returns: undefined;
@@ -1716,6 +1828,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      widget_public_config: { Args: { p_key: string }; Returns: Json };
     };
     Enums: {
       agent_status: "draft" | "ready" | "not_configured" | "disabled";
@@ -1723,6 +1836,7 @@ export type Database = {
         "website_receptionist" | "reservation_assistant" | "voice_receptionist";
       billing_interval: "month" | "year";
       business_role: "owner" | "admin" | "manager" | "staff";
+      channel_kind: "website_widget" | "voice" | "whatsapp";
       conversation_channel:
         "playground" | "website" | "voice" | "whatsapp" | "email";
       conversation_status: "open" | "escalated" | "closed";
@@ -1751,7 +1865,8 @@ export type Database = {
         | "phone"
         | "email"
         | "walk_in"
-        | "other";
+        | "other"
+        | "ai_whatsapp";
       reservation_status:
         | "pending"
         | "confirmed"
@@ -1905,6 +2020,7 @@ export const Constants = {
       ],
       billing_interval: ["month", "year"],
       business_role: ["owner", "admin", "manager", "staff"],
+      channel_kind: ["website_widget", "voice", "whatsapp"],
       conversation_channel: [
         "playground",
         "website",
@@ -1941,6 +2057,7 @@ export const Constants = {
         "email",
         "walk_in",
         "other",
+        "ai_whatsapp",
       ],
       reservation_status: [
         "pending",

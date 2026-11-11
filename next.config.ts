@@ -6,7 +6,6 @@ import type { NextConfig } from "next";
  * must account for the billing provider's checkout scripts).
  */
 const securityHeaders = [
-  { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
@@ -27,7 +26,12 @@ const nextConfig: NextConfig = {
     },
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Everything except the embeddable chat widget may never be framed.
+      // /widget/* gets a per-business CSP frame-ancestors header from src/proxy.ts.
+      { source: "/((?!widget/).*)", headers: [{ key: "X-Frame-Options", value: "DENY" }] },
+    ];
   },
 };
 

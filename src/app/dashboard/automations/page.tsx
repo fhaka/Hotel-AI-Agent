@@ -21,6 +21,7 @@ const KIND_LABEL: Record<string, string> = {
   staff_unanswered_inquiry: "Unanswered hand-over reminder",
   owner_daily_report: "Daily summary",
   owner_welcome: "Welcome",
+  staff_call_summary: "Phone call summary",
 };
 const STATUS_TONE: Record<string, "success" | "warning" | "danger" | "neutral" | "brand"> = {
   sent: "success",

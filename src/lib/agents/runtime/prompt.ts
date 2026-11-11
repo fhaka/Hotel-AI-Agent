@@ -78,6 +78,17 @@ function bookingRule(agentType: PromptInput["agentType"], channel: PromptInput["
   return "You cannot check availability or make, change or cancel reservations or appointments. For such requests, explain this and offer to hand the request to staff with request_human_handoff. Never say or imply a booking exists or is confirmed.";
 }
 
+function styleRule(channel: PromptInput["channel"]): string {
+  switch (channel) {
+    case "voice":
+      return "You are speaking on a PHONE CALL through text-to-speech. Reply in one to three short spoken sentences. No lists, bullet points, markdown, links or emojis. Say dates and prices naturally (\"the twelfth of July\", \"two hundred and eighty-five euros\"). Speech recognition can mishear names, emails and numbers: read them back and ask the caller to confirm before using them in a booking.";
+    case "whatsapp":
+      return "This is a WhatsApp chat. Keep messages short (under 80 words), plain text, no markdown tables; short line breaks are fine.";
+    default:
+      return "Keep replies short (normally under 120 words), in plain text without markdown tables or headings.";
+  }
+}
+
 function sanitizePreference(value: string, max: number): string {
   return sanitizeKnowledgeText(value)
     .replace(/<\s*\/?\s*business_preferences[^>]*>/gi, "[removed tag]")
@@ -98,7 +109,7 @@ export function buildInstructions(p: PromptInput): string {
     `4. ${bookingRule(p.agentType, p.channel)}`,
     `5. Ask for contact details only when needed to hand over a request, and only use details the customer gives you. Before handing over, briefly confirm what will be passed on.`,
     `6. Reply in the customer's language if it is one of: ${languages}. Otherwise reply in ${p.defaultLanguage}.`,
-    `7. Keep replies short (normally under 120 words), in plain text without markdown tables or headings.`,
+    `7. ${styleRule(p.channel)}`,
     `8. Politely decline requests unrelated to ${p.businessName}, beyond brief small talk.`,
     p.industry === "clinic"
       ? `9. Administrative help only (opening hours, appointments, directions, administration). Never give medical advice, diagnoses, dosage or treatment recommendations. For health questions, advise contacting the clinic's medical staff; in an emergency, tell them to call local emergency services immediately.`

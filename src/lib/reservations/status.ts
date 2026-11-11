@@ -15,7 +15,8 @@ export const STATUS_INFO: Record<ReservationStatus, { label: string; tone: "neut
 export const SOURCE_LABEL: Record<ReservationSource, string> = {
   dashboard: "Staff",
   ai_website: "AI website assistant",
-  ai_voice: "AI voice assistant",
+  ai_voice: "AI phone assistant",
+  ai_whatsapp: "AI WhatsApp assistant",
   phone: "Phone",
   email: "Email",
   walk_in: "Walk-in",
@@ -23,7 +24,7 @@ export const SOURCE_LABEL: Record<ReservationSource, string> = {
 };
 
 export function isAiSource(source: ReservationSource): boolean {
-  return source === "ai_website" || source === "ai_voice";
+  return source === "ai_website" || source === "ai_voice" || source === "ai_whatsapp";
 }
 
 /** Mirrors public.update_reservation_status() (the database is authoritative). */

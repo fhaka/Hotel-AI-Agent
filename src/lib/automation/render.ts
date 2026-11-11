@@ -6,6 +6,7 @@ import { formatInZone } from "@/lib/billing/trial";
 import { formatStayDate, todayInZone } from "@/lib/reservations/dates";
 import type { Database } from "@/lib/supabase/database.types";
 import {
+  callSummaryEmail,
   dailyReportEmail,
   escalationEmail,
   paymentFailedEmail,
@@ -110,7 +111,7 @@ export async function renderNotification(admin: Admin, n: NotificationRow): Prom
       const [active, newBookings, aiBookings, convs, escalations, ent] = await Promise.all([
         admin.from("reservations").select("check_in, check_out, status").eq("business_id", n.business_id).in("status", ["confirmed", "checked_in", "checked_out"]).lte("check_in", today).gte("check_out", today),
         admin.from("reservations").select("id", { count: "exact", head: true }).eq("business_id", n.business_id).gte("created_at", since),
-        admin.from("reservations").select("id", { count: "exact", head: true }).eq("business_id", n.business_id).gte("created_at", since).in("source", ["ai_website", "ai_voice"]),
+        admin.from("reservations").select("id", { count: "exact", head: true }).eq("business_id", n.business_id).gte("created_at", since).in("source", ["ai_website", "ai_voice", "ai_whatsapp"]),
         admin.from("agent_conversations").select("id", { count: "exact", head: true }).eq("business_id", n.business_id).neq("channel", "playground").gte("created_at", since),
         admin.from("agent_conversations").select("id", { count: "exact", head: true }).eq("business_id", n.business_id).eq("status", "escalated"),
         admin.rpc("get_business_entitlements_service", { p_business_id: n.business_id }),
@@ -135,6 +136,31 @@ export async function renderNotification(admin: Admin, n: NotificationRow): Prom
             aiMessagesUsed: Number(e.usage?.ai_messages ?? 0),
             aiMessagesLimit: e.limits?.ai_messages_per_month ?? null,
           },
+        }),
+      };
+    }
+    case "staff_call_summary": {
+      const { data: c } = await admin
+        .from("agent_conversations")
+        .select("id, created_at, escalation, status")
+        .eq("id", n.subject_id ?? "")
+        .eq("business_id", n.business_id)
+        .maybeSingle();
+      if (!c) return { action: "skip", reason: "conversation_deleted" };
+      const [{ data: msgs }, { data: booking }] = await Promise.all([
+        admin.from("agent_messages").select("sender_type, content").eq("conversation_id", c.id).in("sender_type", ["customer", "agent"]).order("id").limit(60),
+        admin.from("reservations").select("confirmation_reference").eq("conversation_id", c.id).eq("business_id", n.business_id).limit(1).maybeSingle(),
+      ]);
+      const reason = (c.escalation as { reason?: string } | null)?.reason;
+      return {
+        action: "send",
+        email: callSummaryEmail({
+          businessName: business.name,
+          startedAt: formatInZone(new Date(c.created_at), tz),
+          turns: (msgs ?? []).map((m) => ({ who: m.sender_type === "customer" ? "Caller" : "Assistant", text: m.content.slice(0, 500) })),
+          escalationReason: c.status === "escalated" && reason ? reason.slice(0, 500) : null,
+          bookingNote: booking ? `Reservation created during the call: ${booking.confirmation_reference}` : null,
+          conversationUrl: appUrl(`/dashboard/conversations/${c.id}`),
         }),
       };
     }

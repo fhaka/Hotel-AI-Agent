@@ -38,7 +38,7 @@ export default async function ReservationsPage({ searchParams }: PageProps<"/das
   if (status) query = query.eq("status", status);
   if (from) query = query.gte("check_in", from);
   if (to) query = query.lte("check_in", to);
-  if (aiOnly) query = query.in("source", ["ai_website", "ai_voice"]);
+  if (aiOnly) query = query.in("source", ["ai_website", "ai_voice", "ai_whatsapp"]);
   if (q) {
     query = /^[0-9a-fA-F]{10}$/.test(q)
       ? query.eq("confirmation_reference", q.toUpperCase())
