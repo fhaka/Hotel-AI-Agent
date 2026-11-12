@@ -8,7 +8,8 @@ OUT="$ROOT/src/lib/supabase/database.types.ts"
 bash "$ROOT/scripts/test-db.sh" bash -c \
   'npx supabase gen types typescript --db-url "$DATABASE_URL_TEST?sslmode=disable" --schema public 2>/dev/null' > "$OUT.tmp"
 # The CLI must print only TypeScript; anything else (warnings) means a broken file.
-if [[ "$(head -c 16 "$OUT.tmp")" != "export type Json" ]]; then
+# (Leading blank lines are fine; the CLI prints one on some machines.)
+if [[ "$(grep -m1 -v '^[[:space:]]*$' "$OUT.tmp" | head -c 16)" != "export type Json" ]]; then
   echo "Unexpected output from 'supabase gen types':" >&2
   head -5 "$OUT.tmp" >&2
   rm -f -- "$OUT.tmp"
