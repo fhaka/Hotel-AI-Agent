@@ -52,6 +52,11 @@ export function SignUpForm({ next, email }: { next?: string; email?: string }) {
         error={state.fieldErrors?.password}
       />
       <SubmitButton pendingLabel="Creating account…">Create account</SubmitButton>
+      <p className="text-xs text-muted">
+        By creating an account you agree to the{" "}
+        <a href="/terms" className="underline" target="_blank">Terms of Service</a> and confirm you have read the{" "}
+        <a href="/privacy" className="underline" target="_blank">Privacy Notice</a>.
+      </p>
       {next?.startsWith("/invite/") ? null : (
         <p className="text-xs text-muted">
           Your 7-day free trial starts when you create your business workspace. No payment card required.

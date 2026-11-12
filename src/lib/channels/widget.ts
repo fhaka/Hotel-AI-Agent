@@ -20,10 +20,6 @@ export function safeOrigins(value: unknown): string[] {
     .slice(0, 10);
 }
 
-export function frameAncestors(origins: string[]): string {
-  return `frame-ancestors 'self'${origins.length ? " " + origins.join(" ") : ""}`;
-}
-
 /** Hash of the client IP for rate limiting (raw IPs are never stored). */
 export function ipKey(forwardedFor: string | null): string {
   const ip = (forwardedFor ?? "").split(",")[0]?.trim() || "unknown";

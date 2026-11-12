@@ -2,7 +2,7 @@ import twilio from "twilio";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { defaultVoiceLanguage, readVoiceConfig, voiceConfigSchema, widgetConfigSchema } from "@/lib/channels/config";
 import { greetingTwiml, noInputTwiml, replyTwiml, unavailableTwiml } from "@/lib/channels/voice";
-import { frameAncestors, ipKey, safeOrigins, widgetRef } from "@/lib/channels/widget";
+import { ipKey, safeOrigins, widgetRef } from "@/lib/channels/widget";
 
 vi.mock("server-only", () => ({}));
 
@@ -64,6 +64,7 @@ describe("TwiML", () => {
     expect(x).toContain(`action="${action}"`);
     expect(x).toContain("Hallo, Sie sind verbunden mit Hotel Adriatik.");
     expect(x).toContain("Ich bin ein KI-Assistent.");
+    expect(x).toContain("nicht aufgezeichnet"); // callers hear that the call is transcribed, not recorded
   });
 
   it("keeps the disclosure with a custom greeting", () => {
@@ -96,8 +97,6 @@ describe("widget helpers", () => {
   it("only allows strict origins in the CSP header", () => {
     const origins = safeOrigins(["https://www.hotel.example", "https://a.example; script-src *", "javascript:alert(1)", "https://b.example:8443", 42]);
     expect(origins).toEqual(["https://www.hotel.example", "https://b.example:8443"]);
-    expect(frameAncestors(origins)).toBe("frame-ancestors 'self' https://www.hotel.example https://b.example:8443");
-    expect(frameAncestors([])).toBe("frame-ancestors 'self'");
   });
   it("hashes visitor tokens and IPs", () => {
     expect(widgetRef("a".repeat(48))).toMatch(/^wt_[0-9a-f]{40}$/);

@@ -31,3 +31,9 @@ jobs:
       # Generated database types must match the migrations.
       - run: npm run db:types && git diff --exit-code src/lib/supabase/database.types.ts
       - run: npm run build
+      # Every script on the public pages must be allowed by the CSP header.
+      - name: Content Security Policy check
+        run: |
+          PORT=3100 npm start > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://localhost:3100/ && break; sleep 1; done
+          npm run check:csp -- http://localhost:3100

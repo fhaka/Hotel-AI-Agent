@@ -35,3 +35,20 @@ export async function updateGuest(guestId: string, _prev: GuestState, formData: 
   revalidatePath(`/dashboard/guests/${guestId}`);
   return { status: "success", message: "Guest saved." };
 }
+
+/** Right to erasure: anonymises the guest (owner/admin, enforced in the database). */
+export async function eraseGuest(businessId: string, guestId: string, _prev: GuestState): Promise<GuestState> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/auth/login?next=/dashboard/guests");
+  if (!isUuid(businessId) || !isUuid(guestId)) return { status: "error", message: "Invalid request." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("erase_guest", { p_business_id: businessId, p_guest_id: guestId });
+  if (error) {
+    if (error.code === "42501") return { status: "error", message: "Only owners and admins can erase guest data." };
+    console.error("[guests] erase failed", { code: error.code });
+    return { status: "error", message: "Could not erase the guest's data. Please try again." };
+  }
+  revalidatePath(`/dashboard/guests/${guestId}`);
+  revalidatePath("/dashboard/guests");
+  return { status: "success", message: "Personal data erased. Reservations remain without personal details." };
+}

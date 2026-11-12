@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { updateGuest } from "@/app/dashboard/guests/actions";
+import { eraseGuest, updateGuest } from "@/app/dashboard/guests/actions";
+import { EraseGuestForm } from "@/components/guests/erase-guest";
 import { GuestForm } from "@/components/guests/guest-form";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -16,7 +17,7 @@ export const metadata: Metadata = { title: "Guest" };
 
 export default async function GuestPage({ params }: PageProps<"/dashboard/guests/[guestId]">) {
   const { guestId } = await params;
-  const { workspace } = await getWorkspaceContext(`/dashboard/guests/${guestId}`);
+  const { workspace, entitlements } = await getWorkspaceContext(`/dashboard/guests/${guestId}`);
   if (!isUuid(guestId)) notFound();
   const supabase = await createClient();
   const { data: g } = await supabase.from("guests").select("*").eq("id", guestId).eq("business_id", workspace.businessId).maybeSingle();
@@ -38,6 +39,13 @@ export default async function GuestPage({ params }: PageProps<"/dashboard/guests
           defaults={{ fullName: g.full_name, email: g.email ?? "", phone: g.phone ?? "", preferredLanguage: g.preferred_language ?? "", notes: g.notes ?? "" }}
         />
       </Card>
+      {entitlements.can("business.edit") ? (
+        <Card className="space-y-2 p-6">
+          <h2 className="text-base font-semibold">Privacy</h2>
+          <p className="text-sm text-muted">If the guest asks to be forgotten, erase their personal data here.</p>
+          <EraseGuestForm action={eraseGuest.bind(null, workspace.businessId, g.id)} />
+        </Card>
+      ) : null}
       <Card>
         <h2 className="border-b border-border px-6 py-4 text-base font-semibold">Booking history ({stays?.length ?? 0})</h2>
         {(stays ?? []).length === 0 ? <p className="px-6 py-6 text-sm text-muted">No reservations.</p> : (

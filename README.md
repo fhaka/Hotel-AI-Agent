@@ -4,7 +4,7 @@ Multi-tenant SaaS that gives hotels (and later other service businesses) AI rece
 reservation assistants, with self-service sign-up, private workspaces, a 7-day free trial and
 recurring subscriptions.
 
-> **Status:** Phases 1–9 complete in code (foundation, onboarding, dashboard & team, knowledge base, AI playground, reservation engine, billing, automation, channels). Paddle eligibility and a live sandbox purchase are still to be done by the owner. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
+> **Status:** Phases 1–10 complete in code (foundation, onboarding, dashboard & team, knowledge base, AI playground, reservation engine, billing, automation, channels, production readiness). Going live needs the owner's accounts and keys: follow [docs/operations/launch-checklist.md](docs/operations/launch-checklist.md). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 > for what exists, what does not yet, and the roadmap.
 
 ## Quick start
@@ -29,6 +29,8 @@ npm run dev                  # http://localhost:3000
 | `npm run typecheck` | TypeScript, no emit |
 | `npm test` | Unit tests (no network, no database) |
 | `npm run db:types` | Regenerates `src/lib/supabase/database.types.ts` from the migrations (run after adding a migration) |
+| `npm run check:env` | Production configuration check (prints only present/missing, never values) |
+| `npm run check:csp -- <url>` | Verifies every script on the public pages is allowed by the CSP of a running server |
 | `npm run test:db` | Database security tests: spins up a throwaway PostgreSQL 15+ cluster, applies all migrations, tests RLS, roles, trials and double-booking. Needs PostgreSQL server binaries installed locally (or set `DATABASE_URL_TEST` to an empty disposable database). |
 
 ## How to verify Phase 1 manually
@@ -154,6 +156,19 @@ npm run dev                  # http://localhost:3000
 3. Phone and WhatsApp: follow [docs/setup/channels.md](docs/setup/channels.md). This needs a
    Twilio account, a public HTTPS URL (deployment or tunnel) and `TWILIO_AUTH_TOKEN`.
 
+## How to verify Phase 10 manually
+
+1. `npx supabase db push` (new migration).
+2. Make yourself operator in the Supabase SQL editor:
+   `insert into public.platform_admins (user_id) select id from auth.users where email = 'you@example.com';`
+   Open `/admin`: platform numbers, system health and *Launch readiness*. Another account gets a 404 there.
+3. In `/admin/businesses`, open a business and suspend it: that workspace's playground and channels stop and a red
+   banner appears. Lift the suspension.
+4. As owner: **Data & privacy** → download the export; open a guest → *Erase personal data*.
+5. Open `/privacy`, `/terms`, `/dpa` (draft notice until reviewed). Browser console shows no CSP errors.
+6. `curl http://localhost:3000/api/health` returns `{"status":"ok",...}`.
+7. Deploying: [docs/setup/deployment.md](docs/setup/deployment.md).
+
 ## Project layout
 
 ```
@@ -162,6 +177,8 @@ src/
     auth/              sign-up, login, callback, forgot/reset password, server actions
     dashboard/         protected workspace area
     onboarding/        protected multi-step setup wizard (+ [businessId]/<step>)
+    admin/             operator area (platform admins only)
+    privacy, terms, dpa/  legal pages (drafts until reviewed)
   components/          shared UI (ui/, auth/, app/)
   lib/
     auth/              session DAL, redirect safety, validation schemas
@@ -173,11 +190,13 @@ src/
     email/             Resend sender and escaped templates
     knowledge/         categories, schemas, tenant-scoped loader, agent context builder
     agents/runtime/    prompt, tools, tool loop, OpenAI adapter, turn service
-    security/          same-origin (CSRF) check
     reservations/      status rules, dates, schemas, guest emails, notifier
     billing/           price map, provider interface, Paddle adapter + normalizer, webhook handler
     automation/        notification preferences, templates, renderer, scheduled-job worker
     channels/          widget, Twilio verification/TwiML, channel config and routing
+    admin/, launch/    operator area guard/schemas, production readiness checks
+    observability/     server error reports
+    security/          same-origin check, CSP builder
     supabase/          browser / server / proxy / admin clients
     env.ts             public env validation; env.server.ts for secrets
   proxy.ts             session refresh + coarse route protection
@@ -189,6 +208,9 @@ tests/
   unit/                Vitest unit tests
   db/                  Vitest database/RLS tests
 docs/architecture/     architecture decision records
+docs/setup/            service setup and deployment guides
+docs/operations/       launch checklist, backups, monitoring, performance, customer onboarding
+docs/security/         security reviews
 automation/n8n/        n8n workflow template that triggers the scheduled jobs
 ```
 

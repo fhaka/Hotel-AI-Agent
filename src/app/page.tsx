@@ -17,7 +17,7 @@ const agents = [
   {
     name: "Voice Receptionist",
     status: "Planned",
-    body: "Answers phone calls with the same knowledge and booking tools. Available once a voice provider integration is connected and tested.",
+    body: "Answers phone calls with the same knowledge and booking tools, and hands the caller to your team when needed. Business plan; we set up the phone number with you.",
   },
 ];
 

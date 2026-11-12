@@ -252,15 +252,7 @@ export type Database = {
           id?: never;
           metadata?: NonNullable<Json>;
         };
-        Relationships: [
-          {
-            foreignKeyName: "audit_logs_business_id_fkey";
-            columns: ["business_id"];
-            isOneToOne: false;
-            referencedRelation: "businesses";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       billing_checkout_sessions: {
         Row: {
@@ -506,11 +498,14 @@ export type Database = {
           description: string | null;
           id: string;
           industry: Database["public"]["Enums"]["industry"];
+          limit_overrides: NonNullable<Json>;
           name: string;
           onboarding_completed_at: string | null;
           onboarding_state: NonNullable<Json>;
           phone: string | null;
           supported_languages: string[];
+          suspended_at: string | null;
+          suspension_reason: string | null;
           timezone: string;
           updated_at: string;
           website: string | null;
@@ -527,11 +522,14 @@ export type Database = {
           description?: string | null;
           id?: string;
           industry: Database["public"]["Enums"]["industry"];
+          limit_overrides?: NonNullable<Json>;
           name: string;
           onboarding_completed_at?: string | null;
           onboarding_state?: NonNullable<Json>;
           phone?: string | null;
           supported_languages?: string[];
+          suspended_at?: string | null;
+          suspension_reason?: string | null;
           timezone?: string;
           updated_at?: string;
           website?: string | null;
@@ -547,11 +545,14 @@ export type Database = {
           description?: string | null;
           id?: string;
           industry?: Database["public"]["Enums"]["industry"];
+          limit_overrides?: NonNullable<Json>;
           name?: string;
           onboarding_completed_at?: string | null;
           onboarding_state?: NonNullable<Json>;
           phone?: string | null;
           supported_languages?: string[];
+          suspended_at?: string | null;
+          suspension_reason?: string | null;
           timezone?: string;
           updated_at?: string;
           website?: string | null;
@@ -1321,19 +1322,22 @@ export type Database = {
       };
       trial_grants: {
         Row: {
-          business_id: string;
+          business_id: string | null;
           granted_at: string;
+          id: number;
           user_id: string;
         };
         ComputedFields: never;
         Insert: {
-          business_id: string;
+          business_id?: string | null;
           granted_at?: string;
+          id?: never;
           user_id: string;
         };
         Update: {
-          business_id?: string;
+          business_id?: string | null;
           granted_at?: string;
+          id?: never;
           user_id?: string;
         };
         Relationships: [
@@ -1446,6 +1450,83 @@ export type Database = {
       accept_business_invitation: {
         Args: { p_token: string };
         Returns: string;
+      };
+      admin_assign_channel_address: {
+        Args: {
+          p_address: string;
+          p_business_id: string;
+          p_kind: Database["public"]["Enums"]["channel_kind"];
+        };
+        Returns: undefined;
+      };
+      admin_business_detail: { Args: { p_business_id: string }; Returns: Json };
+      admin_get_settings: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_list_businesses: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_status?: string;
+        };
+        Returns: Json;
+      };
+      admin_list_plans: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          annual_price_cents: number;
+          created_at: string;
+          currency: string;
+          description: string | null;
+          features: NonNullable<Json>;
+          id: string;
+          is_active: boolean;
+          monthly_price_cents: number;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          usage_limits: NonNullable<Json>;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "plans";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      admin_overview: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_release_channel_address: {
+        Args: {
+          p_business_id: string;
+          p_kind: Database["public"]["Enums"]["channel_kind"];
+        };
+        Returns: undefined;
+      };
+      admin_set_business_suspension: {
+        Args: {
+          p_business_id: string;
+          p_reason?: string;
+          p_suspended: boolean;
+        };
+        Returns: undefined;
+      };
+      admin_set_limit_overrides: {
+        Args: { p_business_id: string; p_overrides: Json };
+        Returns: undefined;
+      };
+      admin_update_plan: {
+        Args: {
+          p_description: string;
+          p_features: Json;
+          p_is_active: boolean;
+          p_name: string;
+          p_plan_id: string;
+          p_usage_limits: Json;
+        };
+        Returns: undefined;
+      };
+      admin_update_setting: {
+        Args: { p_key: string; p_value: Json };
+        Returns: undefined;
       };
       apply_billing_event: {
         Args: {
@@ -1658,9 +1739,17 @@ export type Database = {
         };
         Returns: Json;
       };
+      delete_business: {
+        Args: { p_business_id: string; p_confirm_name: string };
+        Returns: undefined;
+      };
       enqueue_due_notifications: {
         Args: Record<PropertyKey, never>;
         Returns: Json;
+      };
+      erase_guest: {
+        Args: { p_business_id: string; p_guest_id: string };
+        Returns: undefined;
       };
       escalate_conversation: {
         Args: {
@@ -1671,6 +1760,7 @@ export type Database = {
         Returns: boolean;
       };
       expire_trials: { Args: Record<PropertyKey, never>; Returns: number };
+      export_business_data: { Args: { p_business_id: string }; Returns: Json };
       fail_agent_turn: {
         Args: {
           p_business_id: string;
@@ -1693,6 +1783,8 @@ export type Database = {
         Args: { p_business_id: string; p_email: string; p_reference: string };
         Returns: Json;
       };
+      health_check: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_platform_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       log_reservation_email: {
         Args: { p_kind: string; p_reservation_id: string; p_status: string };
         Returns: undefined;
@@ -1709,6 +1801,10 @@ export type Database = {
       purge_expired_conversations: {
         Args: Record<PropertyKey, never>;
         Returns: number;
+      };
+      purge_operational_data: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
       };
       record_job_run: {
         Args: {

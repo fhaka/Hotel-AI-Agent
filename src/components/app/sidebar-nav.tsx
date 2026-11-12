@@ -20,6 +20,7 @@ const NAV: Item[] = [
   { href: "/dashboard/business", label: "Business" },
   { href: "/dashboard/team", label: "Team" },
   { href: "/dashboard/billing", label: "Plan & usage" },
+  { href: "/dashboard/privacy", label: "Data & privacy" },
   { href: "/dashboard/settings", label: "Account" },
 ];
 

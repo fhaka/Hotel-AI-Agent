@@ -30,6 +30,7 @@ const INACTIVE_MESSAGES: Record<string, string> = {
   subscription_expired: "Your subscription has expired. Choose a plan to continue.",
   subscription_paused: "Your subscription is paused.",
   no_subscription: "This workspace has no subscription.",
+  suspended: "This workspace has been suspended by the HotelAI team. Your data is safe; please contact support.",
 };
 
 export function subscriptionDecision(s: EntitlementSnapshot): Decision {

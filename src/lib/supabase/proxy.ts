@@ -9,9 +9,16 @@ import type { Database } from "@/lib/supabase/database.types";
  * coarse route protection. This is a convenience layer for redirects only —
  * authorization is enforced again on the server (DAL) and in the database (RLS).
  */
-export async function updateSession(request: NextRequest) {
+export async function updateSession(request: NextRequest, forwardHeaders: Record<string, string> = {}) {
   const env = getPublicEnv();
-  let response = NextResponse.next({ request });
+  // Re-created after cookie refresh, so the forwarded request carries both the
+  // refreshed cookies and the extra headers (CSP nonce).
+  const next = () => {
+    const headers = new Headers(request.headers);
+    for (const [k, v] of Object.entries(forwardHeaders)) headers.set(k, v);
+    return NextResponse.next({ request: { headers } });
+  };
+  let response = next();
 
   const supabase = createServerClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
     cookies: {
@@ -20,7 +27,7 @@ export async function updateSession(request: NextRequest) {
       },
       setAll(cookiesToSet, headers) {
         for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
-        response = NextResponse.next({ request });
+        response = next();
         for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
         // Prevent CDNs from caching responses that set auth cookies.
         for (const [key, value] of Object.entries(headers ?? {})) response.headers.set(key, value);

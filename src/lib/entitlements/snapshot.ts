@@ -11,6 +11,7 @@ export const entitlementSnapshotSchema = z.object({
   evaluated_at: z.string(),
   access_active: z.boolean(),
   reason: z.string().nullable().optional(),
+  suspended: z.boolean().optional(),
   role: z.enum(["owner", "admin", "manager", "staff"]).optional(),
   subscription_status: z
     .enum(["trialing", "active", "past_due", "paused", "canceled", "expired", "incomplete"])

@@ -11,6 +11,7 @@ export type JobStats = {
   enqueued: Record<string, number> | null;
   notifications: { sent: number; retry: number; failed: number; skipped: number };
   purgedConversations: number | null;
+  purgedOperational: Record<string, number> | null;
   errors: string[];
 };
 
@@ -38,6 +39,7 @@ export async function runScheduledJobs(deps: {
     enqueued: null,
     notifications: { sent: 0, retry: 0, failed: 0, skipped: 0 },
     purgedConversations: null,
+    purgedOperational: null,
     errors: [],
   };
 
@@ -100,6 +102,7 @@ export async function runScheduledJobs(deps: {
   }
 
   stats.purgedConversations = await step("purge", () => rpc<number>("purge_expired_conversations"));
+  stats.purgedOperational = await step("retention", () => rpc<Record<string, number>>("purge_operational_data"));
   const status = stats.errors.length ? "partial" : "ok";
   await step("record", () =>
     rpc("record_job_run", {

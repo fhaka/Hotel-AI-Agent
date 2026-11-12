@@ -1,6 +1,6 @@
 # HotelAI — Implementation Plan
 
-Living document. Updated at the end of every phase. Last update: **Phase 9 complete (code)** (2026-11-19).
+Living document. Updated at the end of every phase. Last update: **Phase 10 complete (code); launch steps pending owner accounts** (2026-11-12).
 
 ## Repository status at start
 
@@ -39,6 +39,7 @@ Recorded in [`docs/architecture/`](docs/architecture):
 - [0009 — Billing: provider abstraction, Paddle, verified webhooks](docs/architecture/0009-billing.md)
 - [0010 — Automation: notification outbox and scheduled jobs](docs/architecture/0010-automation.md)
 - [0011 — Customer channels: website widget, phone, WhatsApp](docs/architecture/0011-channels.md)
+- [0012 — Production readiness: CSP, operator area, privacy, monitoring](docs/architecture/0012-production-readiness.md)
 
 ## Phases
 
@@ -240,9 +241,21 @@ implemented through the shared `executeTurn()`. Tested: Twilio signature checks 
 SDK, TwiML injection, routing and conversation binding in SQL (150 DB tests), and the widget
 security headers on a running server. A real call has not been placed.
 
-### Phase 10 — Production launch ⬜
-Nonce-based CSP, security review, error monitoring, backups, performance, legal review (privacy
-notice, terms, DPA, retention, call-recording consent), deployment.
+### Phase 10 — Production launch ✅ (code) · go-live steps need the owner's accounts
+
+| Item | Status |
+|---|---|
+| Security review (docs/security/review-2026-11.md) + schema-wide security invariant tests | ✅ |
+| Nonce-based CSP, verified by `npm run check:csp` (in CI) and in Chromium | ✅ |
+| Automated tests: CI fixed (it had failed on every push: missing route types), CSP check added | ✅ (first green run to be confirmed on GitHub) |
+| Error monitoring: `onRequestError` → JSON logs + optional alert webhook; error pages with reference; `/api/health` | ✅ |
+| Performance review with a measurement (docs/operations/performance.md) | ✅ |
+| Backups: procedure, extra logical dump, restore drill (docs/operations/backups.md) | ✅ documented · ⏳ drill needs production project |
+| Production configuration: readiness checks (`npm run check:env`, admin card), deployment guide | ✅ |
+| Legal & privacy: Privacy Notice, Terms, DPA with sub-processors (marked draft), sign-up consent, phone transcription disclosure, retention jobs, data export, guest erasure, workspace deletion | ✅ · ⏳ lawyer review |
+| Operator admin area: platform metrics, businesses, suspension, limit overrides, phone numbers, plans, trial/agents/retention settings, audit | ✅ |
+| Customer onboarding process (docs/operations/customer-onboarding.md), launch checklist | ✅ |
+| Deployment to production | ⏳ owner: accounts and keys (docs/setup/deployment.md) |
 
 ## Known gaps and risks (honest list)
 
@@ -256,6 +269,6 @@ notice, terms, DPA, retention, call-recording consent), deployment.
    real (no API key here; resend.com docs were also unreachable from this sandbox).
 4. Supabase Auth email sending uses Supabase's built-in SMTP by default, which is heavily
    rate-limited — configure custom SMTP (e.g. Resend) before real users sign up.
-5. No Content Security Policy yet (baseline security headers are set).
-6. `/admin` is protected by login but has no pages yet; platform-admin authorization uses
-   `public.platform_admins`, writable only with the service role.
+5. Operator accounts have no enforced MFA yet (see the security review follow-ups).
+6. Legal pages are drafts until reviewed by a lawyer; backup restore drill and load tests need the
+   production project.

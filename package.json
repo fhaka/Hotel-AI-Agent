@@ -9,8 +9,10 @@
     "lint": "eslint",
     "test": "vitest run --project unit",
     "test:db": "bash scripts/test-db.sh",
-    "typecheck": "tsc --noEmit",
-    "db:types": "bash scripts/gen-types.sh"
+    "typecheck": "next typegen && tsc --noEmit",
+    "db:types": "bash scripts/gen-types.sh",
+    "check:csp": "node scripts/check-csp.mjs",
+    "check:env": "node scripts/check-env.ts"
   },
   "dependencies": {
     "@paddle/paddle-js": "^1.6.6",

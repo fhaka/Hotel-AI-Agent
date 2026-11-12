@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const FEATURE_LABELS: Record<string, string> = {
   website_receptionist: "AI website receptionist",
   reservation_assistant: "AI reservation assistant",
-  voice_receptionist: "AI voice receptionist (coming later)",
+  voice_receptionist: "AI phone receptionist (phone number set up with you)",
   knowledge_base: "Business knowledge base",
   automations: "Automated reminders & workflows",
   calendar: "Reservation calendar",
