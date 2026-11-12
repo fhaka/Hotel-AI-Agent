@@ -247,7 +247,7 @@ security headers on a running server. A real call has not been placed.
 |---|---|
 | Security review (docs/security/review-2026-11.md) + schema-wide security invariant tests | ✅ |
 | Nonce-based CSP, verified by `npm run check:csp` (in CI) and in Chromium | ✅ |
-| Automated tests: CI fixed (it had failed on every push: missing route types), CSP check added | ✅ (first green run to be confirmed on GitHub) |
+| Automated tests: CI fixed (it had failed on every push: missing route types), CSP check added | ✅ first green run: https://github.com/fhaka/Hotel-AI-Agent/actions/runs/43171052920 |
 | Error monitoring: `onRequestError` → JSON logs + optional alert webhook; error pages with reference; `/api/health` | ✅ |
 | Performance review with a measurement (docs/operations/performance.md) | ✅ |
 | Backups: procedure, extra logical dump, restore drill (docs/operations/backups.md) | ✅ documented · ⏳ drill needs production project |
