@@ -12,7 +12,7 @@ This guide uses **Vercel** (Next.js host) and **Supabase** (database and auth). 
    npx supabase link --project-ref <prod-ref>
    ```
    ```bash
-   npx supabase db push
+   npx supabase db push --remote
    ```
 3. **Authentication:**
    - Under *URL configuration*, set the Site URL to `https://app.yourdomain.com` and add

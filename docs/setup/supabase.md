@@ -23,8 +23,12 @@ From **Project Settings → API Keys** copy:
 ```bash
 npx supabase login
 npx supabase link --project-ref <your-project-ref>
-npx supabase db push
+npx supabase db push --remote
 ```
+
+`--remote` is required: newer CLI versions target a local Docker database by default and fail
+with `ECONNREFUSED 127.0.0.1:54322` without it. The output must say the target is your
+linked project.
 
 ## 4. Configure Auth (Dashboard → Authentication)
 

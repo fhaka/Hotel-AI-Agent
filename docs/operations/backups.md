@@ -38,7 +38,7 @@ after the retention period.
 
 ## After a restore
 
-- Re-run `npx supabase db push` if the restored copy is older than the latest migration.
+- Re-run `npx supabase db push --remote` if the restored copy is older than the latest migration.
 - Billing:
   - Paddle keeps sending webhooks; replay missed ones from the Paddle dashboard (*Notifications → event log*).
   - `apply_billing_event` is idempotent and ignores stale events.

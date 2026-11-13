@@ -15,7 +15,7 @@ Requirements: Node.js 22+, a Supabase project (see [docs/setup/supabase.md](docs
 npm install
 cp .env.example .env.local   # then fill in the Supabase values
 npx supabase link --project-ref <your-project-ref>
-npx supabase db push         # applies supabase/migrations
+npx supabase db push --remote  # applies supabase/migrations to the linked project
 npm run dev                  # http://localhost:3000
 ```
 
@@ -60,7 +60,7 @@ npm run dev                  # http://localhost:3000
 
 ## How to verify Phase 3 manually
 
-1. Run `npx supabase db push` (new migration) and, optionally, set `RESEND_API_KEY` /
+1. Run `npx supabase db push --remote` (new migration) and, optionally, set `RESEND_API_KEY` /
    `RESEND_FROM_EMAIL` in `.env.local` (verified sending domain required by Resend).
 2. **Team → Invite** a second email address as *Staff*. Without Resend configured you get a
    copyable link and a clear notice; with Resend, an email arrives.
@@ -78,7 +78,7 @@ npm run dev                  # http://localhost:3000
 
 ## How to verify Phase 4 manually
 
-1. `npx supabase db push` (new migration).
+1. `npx supabase db push --remote` (new migration).
 2. **Knowledge base** → *Add entry* → FAQ "Do you have parking?" / "Yes, free, 20 spaces".
    Entries from onboarding show a *From setup* badge.
 3. Search for `parking`, filter by category, edit and delete an entry (confirmation dialog).
@@ -88,7 +88,7 @@ npm run dev                  # http://localhost:3000
 
 ## How to verify Phase 5 manually
 
-1. `npx supabase db push` (new migration).
+1. `npx supabase db push --remote` (new migration).
 2. In `.env.local` set `OPENAI_API_KEY`, `OPENAI_MODEL` (a model your account can use) and
    `SUPABASE_SECRET_KEY`, then restart `npm run dev`. Without them the playground shows a clear
    "AI is not configured" message instead of a chat box.
@@ -105,7 +105,7 @@ npm run dev                  # http://localhost:3000
 
 ## How to verify Phase 6 manually
 
-1. `npx supabase db push`.
+1. `npx supabase db push --remote`.
 2. **Business → Hotel & rooms**: set the maximum stay, free-cancellation hours and (optionally)
    *Let the AI assistant cancel…*.
 3. **Rooms**: open a room type, add rooms (`105-108`) and a seasonal rate.
@@ -121,7 +121,7 @@ npm run dev                  # http://localhost:3000
 
 ## How to verify Phase 7 manually
 
-1. `npx supabase db push`.
+1. `npx supabase db push --remote`.
 2. Without Paddle keys, **Plan & usage** says online payment isn't set up, and `/pricing` shows the
    plans from the database.
 3. Follow [docs/setup/paddle.md](docs/setup/paddle.md) with a **sandbox** account, then buy
@@ -133,7 +133,7 @@ npm run dev                  # http://localhost:3000
 
 ## How to verify Phase 8 manually
 
-1. `npx supabase db push`. Set `CRON_SECRET` (`openssl rand -hex 32`) and the Resend variables
+1. `npx supabase db push --remote`. Set `CRON_SECRET` (`openssl rand -hex 32`) and the Resend variables
    in `.env.local`.
 2. Trigger a run (normally done by a scheduler, see docs/setup/automation.md):
    ```bash
@@ -149,7 +149,7 @@ npm run dev                  # http://localhost:3000
 
 ## How to verify Phase 9 manually
 
-1. `npx supabase db push` (two new migrations).
+1. `npx supabase db push --remote` (two new migrations).
 2. **Channels → Website chat**: enable it, add `http://localhost:3000`, and copy the embed code
    into a test HTML page served from that origin. The bubble opens the chat; conversations show
    up under **Conversations**; bookings are real and marked as AI bookings.
@@ -158,7 +158,7 @@ npm run dev                  # http://localhost:3000
 
 ## How to verify Phase 10 manually
 
-1. `npx supabase db push` (new migration).
+1. `npx supabase db push --remote` (new migration).
 2. Make yourself operator in the Supabase SQL editor:
    `insert into public.platform_admins (user_id) select id from auth.users where email = 'you@example.com';`
    Open `/admin`: platform numbers, system health and *Launch readiness*. Another account gets a 404 there.
